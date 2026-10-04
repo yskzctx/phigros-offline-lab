@@ -35,18 +35,10 @@ public final class LaunchActivity extends Activity {
                 Log.i("PhigrosOffline", "resource.setup.begin");
                 prepareInitialData(LaunchActivity.this);
                 OfflineAssets.prepare(LaunchActivity.this);
-                Log.i("PhigrosOffline", "resource.setup.complete; awaiting mode choice");
+                Log.i("PhigrosOffline", "resource.setup.complete; entering manual mode with controls");
                 runOnUiThread(new Runnable() { public void run() {
                     progress.dismiss();
-                    new AlertDialog.Builder(LaunchActivity.this)
-                        .setTitle("是否开启自动游玩？")
-                        .setPositiveButton("开启", new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialog, int which) { choose(true); }
-                        })
-                        .setNegativeButton("关闭", new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialog, int which) { choose(false); }
-                        })
-                        .setCancelable(false).show();
+                    choose(false);
                 }});
             } catch (final Throwable error) {
                 runOnUiThread(new Runnable() { public void run() {
@@ -145,27 +137,7 @@ public final class LaunchActivity extends Activity {
         autoplay=enabled;
     }
 
-    public static void showRestoredPrompt(final Activity activity) {
-        DialogInterface.OnClickListener onChoice=new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, final int which) {
-                new Thread(new Runnable() { public void run() {
-                    try { beginSession(activity,which==DialogInterface.BUTTON_POSITIVE); }
-                    catch (final Throwable error) {
-                        activity.runOnUiThread(new Runnable() { public void run() {
-                            new AlertDialog.Builder(activity).setTitle("存档备份失败")
-                                .setMessage(String.valueOf(error.getMessage()))
-                                .setPositiveButton("关闭",new DialogInterface.OnClickListener() {
-                                    public void onClick(DialogInterface d,int w) { activity.finish(); }
-                                }).show();
-                        }});
-                    }
-                }},"PhigrosRestoredSession").start();
-            }
-        };
-        new AlertDialog.Builder(activity).setTitle("是否开启自动游玩？")
-            .setPositiveButton("开启",onChoice).setNegativeButton("关闭",onChoice)
-            .setCancelable(false).show();
-    }
+    public static void beginManualSession(Context context)throws IOException {beginSession(context,false);}
 
     private void startGame() {
         Intent intent = new Intent();

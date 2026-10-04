@@ -7,7 +7,6 @@ import android.os.Bundle;
 import android.util.Log;
 
 public final class OfflineApplication extends Application {
-    private boolean promptShown;
 
     @Override protected void attachBaseContext(Context context) {
         super.attachBaseContext(context);
@@ -20,17 +19,15 @@ public final class OfflineApplication extends Application {
 
     @Override public void onCreate() {
         super.onCreate();
-        Log.i("PhigrosOffline", "app.created; native library deferred until explicit enabled choice");
+        Log.i("PhigrosOffline", "app.created; manual by default, controls on game entry");
         registerActivityLifecycleCallbacks(new ActivityLifecycleCallbacks() {
             public void onActivityResumed(Activity activity) {
-                OverlayMenu.resume(activity);
-                // Android can restore Unity directly after killing a background process.
-                // Route that new process through the mode choice as well.
-                if (!LaunchActivity.isSessionChosen() && !promptShown
+                if (!LaunchActivity.isSessionChosen()
                         && "com.unity3d.player.UnityPlayerActivity".equals(activity.getClass().getName())) {
-                    promptShown = true;
-                    LaunchActivity.showRestoredPrompt(activity);
+                    try {LaunchActivity.beginManualSession(activity);}
+                    catch(java.io.IOException e){Log.e("PhigrosOffline","Manual session initialization failed",e);}
                 }
+                OverlayMenu.resume(activity);
             }
             public void onActivityCreated(Activity activity, Bundle saved) { }
             public void onActivityStarted(Activity a) { }

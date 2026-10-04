@@ -7,21 +7,28 @@
 #include <stdatomic.h>
 #include <string.h>
 #include <unistd.h>
+#include <pthread.h>
+#include <time.h>
+#ifndef OFFLINE_HOST_TEST
 #include <sys/mman.h>
 #include <link.h>
-#include <pthread.h>
 #include <jni.h>
 #include <android/log.h>
 #include "expected-hooks.h"
+#else
+#define ANDROID_LOG_INFO 4
+static int __android_log_print(int priority,const char *tag,const char *format,...){(void)priority;(void)tag;(void)format;return 0;}
+#endif
 #include "controls-plan.h"
 
 static atomic_bool enabled = false;
 static atomic_bool ready = false;
 static atomic_bool session_dirty = false;
 static pthread_mutex_t config_lock=PTHREAD_MUTEX_INITIALIZER;
-static ControlConfig pending_config={.target=1000000};
+static ControlConfig pending_config={.target=1000000,.accuracy=10000};
 static ControlConfig chart_config;
 static atomic_int status_total,status_planned,status_hit;
+static atomic_int status_score,status_accuracy,status_miss,status_good,status_bad;
 static atomic_uint config_revision=1;
 static void *plan_score,*plan_list;
 static int plan_size,plan_last_count=-1;
@@ -38,9 +45,8 @@ typedef void *(*result_fn)(void *,const void *);
 static perfect_fn perfect_original;
 static result_fn result_original;
 static perfect_fn good_call;
-static void (*miss_call)(void *,float,const void *);
+static void (*miss_original)(void *,float,const void *);
 static void (*bad_call)(void *,float,float,const void *);
-static void (*set_score_call)(void *,float,const void *);
 
 static inline void *pointer(void *object,size_t offset) {
     return *(void **)((char *)object+offset);
@@ -61,13 +67,16 @@ static int ordinal(void *score,float code) {
     void *array=pointer(list,0x10);
     if(!array || n<1 || n>MAX_NOTES || *(size_t *)((char *)array+0x18)<(size_t)n)return 0;
     int count=judged_count(score);
-    if(plan_score!=score || plan_list!=list || plan_size!=n || count<plan_last_count || count==0) {
+    if(plan_score!=score || plan_list!=list || plan_size!=n || count<plan_last_count) {
         pthread_mutex_lock(&config_lock);chart_config=pending_config;pthread_mutex_unlock(&config_lock);
         plan_score=score;plan_list=list;plan_size=n;
         memset(consumed,0,(size_t)n+1);
-        int planned=make_plan(&chart_config,n,plan_random(&chart_seed),selected);
+        PlanEstimate predicted;
+        int planned=make_profile(&chart_config,n,plan_random(&chart_seed),selected,&predicted);
         atomic_store(&status_total,n);atomic_store(&status_planned,planned);atomic_store(&status_hit,0);
-        __android_log_print(ANDROID_LOG_INFO,"PhigrosOffline","control.chart notes=%d planned=%d judgment=%d target=%d",n,planned,chart_config.judgment,chart_config.target);
+        atomic_store(&status_score,predicted.score);atomic_store(&status_accuracy,predicted.accuracy);
+        atomic_store(&status_miss,predicted.miss);atomic_store(&status_good,predicted.good);atomic_store(&status_bad,predicted.bad);
+        __android_log_print(ANDROID_LOG_INFO,"PhigrosOffline","control.chart notes=%d planned=%d mode=%d target=%d estimate=%d acc=%d M=%d G=%d B=%d rules=%d already_judged=%d",n,planned,chart_config.mode,chart_config.target,predicted.score,predicted.accuracy,predicted.miss,predicted.good,predicted.bad,chart_config.rule_count,count);
     }
     plan_last_count=count;
     for(int i=0;i<n;i++) {
@@ -76,17 +85,26 @@ static int ordinal(void *score,float code) {
     }
     return 0;
 }
+static void mark_hit(int i,int judgment) {
+    if(i && selected[i]==judgment && !consumed[i]) {
+        consumed[i]=1;atomic_fetch_add(&status_hit,1);
+        __android_log_print(ANDROID_LOG_INFO,"PhigrosOffline","control.note ordinal=%d judgment=%d",i,judgment);
+    }
+}
+static void miss(void *score,float code,const void *method) {
+    if(atomic_load(&ready)&&atomic_load(&enabled)&&score)mark_hit(ordinal(score,code),1);
+    miss_original(score,code,method);
+}
 static void perfect(void *score,float code,float time,Vec3 position,bool is_hold,const void *method) {
     if(!atomic_load(&ready) || !atomic_load(&enabled) || !score) {
         perfect_original(score,code,time,position,is_hold,method);return;
     }
     int i=ordinal(score,code);
     if(i && selected[i] && !consumed[i]) {
-        consumed[i]=1;atomic_fetch_add(&status_hit,1);
-        __android_log_print(ANDROID_LOG_INFO,"PhigrosOffline","control.note ordinal=%d judgment=%d",i,chart_config.judgment);
-        if(chart_config.judgment==1) {
-            miss_call(score,code,NULL);
-        } else if(chart_config.judgment==2) {
+        int judgment=selected[i];mark_hit(i,judgment);
+        if(judgment==1) {
+            miss_original(score,code,NULL);
+        } else if(judgment==2) {
             good_call(score,code,0.08f,position,is_hold,NULL);
         } else {
             bad_call(score,code,0.15f,NULL);
@@ -97,12 +115,9 @@ static void perfect(void *score,float code,float time,Vec3 position,bool is_hold
 }
 static void *result(void *score,const void *method) {
     void *out=result_original(score,method);
-    if(out && score==plan_score && atomic_load(&enabled) && atomic_load(&ready)
-            && !has_intervention(&chart_config) && chart_config.target<1000000) {
-        // Real LevelResultInfo.set_Score clamps the float and updates IntScore.
-        // This is a result-number override; judgment counts remain the actual counts.
-        set_score_call(out,(float)chart_config.target,NULL);
-        __android_log_print(ANDROID_LOG_INFO,"PhigrosOffline","control.result target=%d",chart_config.target);
+    if(out && score==plan_score && atomic_load(&enabled) && atomic_load(&ready)) {
+        __android_log_print(ANDROID_LOG_INFO,"PhigrosOffline","control.result score=%d percent=%.4f P=%d G=%d B=%d M=%d planned=%d executed=%d",*integer(out,0x10),*number(out,0x18),*integer(out,0x1c),*integer(out,0x20),*integer(out,0x24),*integer(out,0x28),atomic_load(&status_planned),atomic_load(&status_hit));
+        plan_score=NULL;
     }
     return out;
 }
@@ -117,6 +132,11 @@ static bool automatic(void *self, const void *method, judge_fn original, int typ
     if ((judge && *byte(judge,0x88)) || !*byte(progress,0x8a)) return false;
     float time=*number(progress,0x90), due=*number(note,0x2c);
     if (time < due) return false;
+    void *score=pointer(self,0x20);
+    int i=score?ordinal(score,*number(note,0x38)):0;
+    // A planned Miss must visibly follow the game's unhit-note timeout path.
+    // Do not set synthetic input, isJudged, flick or hold grace flags for it.
+    if(i && selected[i]==1)return original(self,method);
     bool starting=type!=3 || !*byte(self,0x8e);
     if (type==0 || type==3) *byte(note,0x28)=1;
     if (type==1) *byte(self,0x60)=1;
@@ -140,6 +160,7 @@ static void record(void *s,void *song,void *difficulty,void *result,const void *
     if (!atomic_load(&session_dirty) || !atomic_load(&ready)) record_original(s,song,difficulty,result,m);
 }
 
+#ifndef OFFLINE_HOST_TEST
 static void emit_absolute(uint32_t **cursor,unsigned reg,uintptr_t address,bool branch) {
     *(*cursor)++ = 0x58000040u | reg; // ldr Xreg, PC+8
     *(*cursor)++ = branch ? (0xd61f0000u | reg<<5) : 0x14000003u;
@@ -195,11 +216,9 @@ static void *worker(void *unused) {
         atomic_store(&enabled,false);return NULL;
     }
     good_call=(perfect_fn)(image+0x1d876b8);
-    miss_call=(void (*)(void *,float,const void *))(image+0x1d874e4);
     bad_call=(void (*)(void *,float,float,const void *))(image+0x1d875c4);
-    set_score_call=(void (*)(void *,float,const void *))(image+0x1cbf0cc);
-    void *replacements[]={(void *)click,(void *)drag,(void *)flick,(void *)hold,(void *)record,(void *)perfect,(void *)result};
-    void **originals[]={(void **)&click_original,(void **)&drag_original,(void **)&flick_original,(void **)&hold_original,(void **)&record_original,(void **)&perfect_original,(void **)&result_original};
+    void *replacements[]={(void *)click,(void *)drag,(void *)flick,(void *)hold,(void *)record,(void *)perfect,(void *)result,(void *)miss};
+    void **originals[]={(void **)&click_original,(void **)&drag_original,(void **)&flick_original,(void **)&hold_original,(void **)&record_original,(void **)&perfect_original,(void **)&result_original,(void **)&miss_original};
     for (size_t i=0;i<sizeof(replacements)/sizeof(replacements[0]);i++) if (install(&hooks[i],replacements[i],originals[i])) {
         atomic_store(&enabled,false);
         __android_log_print(ANDROID_LOG_ERROR,"PhigrosOffline","Autoplay hook installation failed: %zu",i);
@@ -214,28 +233,37 @@ JNIEXPORT void JNICALL Java_com_phigros_offline_LaunchActivity_setAutoplay(JNIEn
     if(value==JNI_TRUE)atomic_store(&session_dirty,true);
     atomic_store(&enabled,value==JNI_TRUE);
 }
-JNIEXPORT jboolean JNICALL Java_com_phigros_offline_NativeControls_configure(JNIEnv *env,jclass cls,jint target,jint judgment,jint position,jint start,jint end,jint count,jintArray indices) {
+JNIEXPORT jboolean JNICALL Java_com_phigros_offline_NativeControls_configure(JNIEnv *env,jclass cls,jint mode,jint target,jint accuracy,jintArray words) {
     (void)cls;
-    if(target<0 || target>1000000 || judgment<0 || judgment>3 || position<0 || position>6
-        || start<1 || start>MAX_NOTES || end<1 || end>MAX_NOTES || count<1 || count>MAX_NOTES)return JNI_FALSE;
-    ControlConfig c={.target=target,.judgment=judgment,.position=position,.start=start,.end=end,.count=count};
-    c.length=indices?(*env)->GetArrayLength(env,indices):0;
-    if(c.length>MAX_INDICES || (position==2 && end<start))return JNI_FALSE;
-    if(c.length)(*env)->GetIntArrayRegion(env,indices,0,c.length,c.indices);
+    if(mode<0||mode>2||target<0||target>1000000||accuracy<0||accuracy>10000||!words)return JNI_FALSE;
+    int length=(*env)->GetArrayLength(env,words);
+    if(length<1||length>MAX_CONFIG_WORDS)return JNI_FALSE;
+    jint packed[MAX_CONFIG_WORDS];(*env)->GetIntArrayRegion(env,words,0,length,packed);
     if((*env)->ExceptionCheck(env))return JNI_FALSE;
-    for(int i=0;i<c.length;i++)if(c.indices[i]<1 || c.indices[i]>MAX_NOTES)return JNI_FALSE;
+    ControlConfig c={.mode=mode,.target=target,.accuracy=accuracy,.rule_count=packed[0]};
+    if(c.rule_count<0||c.rule_count>MAX_RULES)return JNI_FALSE;
+    int cursor=1;
+    for(int i=0;i<c.rule_count;i++){
+        if(cursor+6>length)return JNI_FALSE;
+        NoteRule *r=&c.rules[i];r->judgment=packed[cursor++];r->position=packed[cursor++];r->start=packed[cursor++];r->end=packed[cursor++];r->count=packed[cursor++];r->length=packed[cursor++];
+        if(r->judgment<1||r->judgment>3||r->position<1||r->position>6||r->start<1||r->start>MAX_NOTES||r->end<1||r->end>MAX_NOTES||r->count<1||r->count>MAX_NOTES||r->length<0||r->length>MAX_INDICES||cursor+r->length>length||(r->position==2&&r->end<r->start)||(r->position==3&&r->length==0))return JNI_FALSE;
+        for(int k=0;k<r->length;k++){int v=packed[cursor++];if(v<1||v>MAX_NOTES)return JNI_FALSE;r->indices[k]=v;}
+    }
+    if(cursor!=length)return JNI_FALSE;
     pthread_mutex_lock(&config_lock);pending_config=c;pthread_mutex_unlock(&config_lock);
     atomic_fetch_add(&config_revision,1);return JNI_TRUE;
 }
 JNIEXPORT jintArray JNICALL Java_com_phigros_offline_NativeControls_status(JNIEnv *env,jclass cls) {
     (void)cls;
-    jint values[]={atomic_load(&ready),atomic_load(&enabled),atomic_load(&status_total),atomic_load(&status_planned),atomic_load(&status_hit),(jint)atomic_load(&config_revision)};
-    jintArray out=(*env)->NewIntArray(env,6);
-    if(out)(*env)->SetIntArrayRegion(env,out,0,6,values);return out;
+    jint values[]={atomic_load(&ready),atomic_load(&enabled),atomic_load(&status_total),atomic_load(&status_planned),atomic_load(&status_hit),(jint)atomic_load(&config_revision),atomic_load(&status_score),atomic_load(&status_accuracy),atomic_load(&status_miss),atomic_load(&status_good),atomic_load(&status_bad)};
+    jintArray out=(*env)->NewIntArray(env,11);
+    if(out)(*env)->SetIntArrayRegion(env,out,0,11,values);return out;
 }
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm,void *reserved) {
     (void)vm;(void)reserved;
+    struct timespec now;if(clock_gettime(CLOCK_MONOTONIC,&now)==0)chart_seed^=(uint32_t)now.tv_nsec^(uint32_t)now.tv_sec;
     pthread_t thread;
     if (!pthread_create(&thread,NULL,worker,NULL)) pthread_detach(thread);
     return JNI_VERSION_1_6;
 }
+#endif

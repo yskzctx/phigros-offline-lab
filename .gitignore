@@ -6,3 +6,8 @@
 *.pem
 *password*
 *device-private*
+
+*.exe
+test-classes/
+goal-rules-test
+native-dispatch-test

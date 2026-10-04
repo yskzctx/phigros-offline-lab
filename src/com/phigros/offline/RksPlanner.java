@@ -31,6 +31,11 @@ public strictfp final class RksPlanner {
         return minimum/270f;
     }
     private static double variation(String s) {return (Integer.toUnsignedLong(s.hashCode())%10007)/10007.0;}
+    public static List<Record> allAP(List<Chart> charts) {
+        ArrayList<Record> records=new ArrayList<Record>();
+        for(Chart c:charts)records.add(new Record(c,100f,true));
+        finishScores(records);return records;
+    }
     private static List<Record> profile(List<Chart> charts,Set<String> fixed,float target,double scale) {
         ArrayList<Record> result=new ArrayList<Record>();
         for(Chart c:charts) {
@@ -47,8 +52,13 @@ public strictfp final class RksPlanner {
         return result;
     }
     public static List<Record> generate(List<Chart> charts,float target) {
-        if(charts.size()<30 || !Float.isFinite(target) || target<0 || target>maximum(charts))
+        float maximum=maximum(charts);
+        float shownMaximum=Math.round(maximum*100f)/100f;
+        if(charts.size()<30 || !Float.isFinite(target) || target<0 || target>shownMaximum)
             throw new IllegalArgumentException("目标 RKS 超出此版本可达范围");
+        // The menu accepts four decimals; the displayed upper edge means restore
+        // all histories, not merely the B27/AP3 subset that determines RKS.
+        if(target>=(float)(Math.floor(maximum*10000.0)/10000.0))return allAP(charts);
         if(target>0 && target<minimumPositive(charts))throw new IllegalArgumentException("该低 RKS 在真实公式中不可达");
         ArrayList<Chart> sorted=new ArrayList<Chart>(charts);
         Collections.sort(sorted,new Comparator<Chart>(){public int compare(Chart a,Chart b){return Float.compare(b.difficulty,a.difficulty);}});
