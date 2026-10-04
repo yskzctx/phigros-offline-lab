@@ -1,0 +1,24 @@
+{
+  "artifact": "Phigros-4.0.1-157-offline-arm64-controls-rks.apk",
+  "version_code": 164,
+  "sha256": "a3aaefec5ab4978b0b4b4f4bf8ef5291977f3cb5fa90c1a69c078631785f4c46",
+  "all_unity_and_game_native_resources_crc_preserved": true,
+  "signature_verified": true,
+  "alignment_verified": true,
+  "permission": "SYSTEM_ALERT_WINDOW",
+  "internet_permission": false,
+  "root_required_for_runtime": false,
+  "device_tested": false,
+  "installed_version_code": 164,
+  "device_runtime_note": "Installed preserving modified-game data. Awaiting user startup, overlay authorization, chart intervention and RKS restart tests.",
+  "independent_checks": {
+    "native_positions": "Host selection tests and separate on-device ARM64 fixture passed",
+    "native_abi": "ARM64 fake game objects passed HFA float struct / bool dispatch; not an in-game test",
+    "rks_formula": "Audited game ARM64 implementation: B27 + top3 AP / 30, float math",
+    "rks_decimal_targets": "Independent planner cases 0 to 17.3166, including 16 and 16.25, error < 0.00004",
+    "save_codec": "Java encrypted records decoded by existing Python codec and exact roundtrip passed",
+    "storage": "Two-file backup, restore, rejected edits preserving data, and autoplay restore before RKS passed on JVM",
+    "manual_baseline": "Actual Java session tests passed without any native library available"
+  },
+  "source_archive": "Phigros-164-浮窗与RKS-本地源码备份.zip"
+}

@@ -1,0 +1,31 @@
+{
+  "artifact": "Phigros-4.0.1-157-offline-arm64-resource-fixed.apk",
+  "version_code": 163,
+  "added_pack_index_rows": [
+    "UnityDataAssetPack\tbin/Data/Managed/Metadata/global-metadata.dat\t11287668",
+    "UnityDataAssetPack\tbin/Data/Managed/Resources/System.Data.dll-resources.dat\t93718",
+    "UnityDataAssetPack\tbin/Data/Managed/Resources/System.Drawing.dll-resources.dat\t25453",
+    "UnityDataAssetPack\tbin/Data/Managed/Resources/mscorlib.dll-resources.dat\t337563",
+    "UnityDataAssetPack\tbin/Data/RuntimeInitializeOnLoads.json\t1458",
+    "UnityDataAssetPack\tbin/Data/ScriptingAssemblies.json\t4152",
+    "UnityDataAssetPack\tbin/Data/boot.config\t151",
+    "UnityDataAssetPack\tbin/Data/data.unity3d\t8105293",
+    "UnityDataAssetPack\tbin/Data/sharedassets0.resource\t15130080",
+    "UnityDataAssetPack\tbin/Data/unity default resources\t1121184",
+    "UnityDataAssetPack\tbin/Data/unity_app_guid\t36"
+  ],
+  "all_other_content_crc_preserved": true,
+  "sha256": "f173fcd6d645afaf6ae19661957400ee41a4152e1395b7cbaf28de2cc5462ae3",
+  "device_tested": true,
+  "root_required_for_runtime": false,
+  "device_coverage": {
+    "version_163_startup_disabled": "Observed; native helper not mapped",
+    "version_163_startup_enabled": "Observed; native helper mapped and hooks ready",
+    "chapter9_anomaly_chart": "User reported normal",
+    "collection_page": "User reported normal",
+    "autoplay": "User reported normal",
+    "manual_full_chart_result": "Observed on resource-fixed prototype before version 163 packaging",
+    "full_song_and_story_coverage": "Not complete",
+    "device_session_rollback": "Still requires explicit device regression"
+  }
+}
