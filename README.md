@@ -1,14 +1,18 @@
 # Phigros 离线共存测试项目
 
-基于 Phigros 4.0.1（157）的非官方 arm64 本地测试修改版。当前候选为 **166 预发布版：手机交互修复仍待真机验收**。
+基于 Phigros 4.0.1（157）的非官方 arm64 本地测试修改版。当前版本为 **167 正式版：仅修复资源重复储存**。
 
 ## 下载与安装
 
-[进入 Releases](https://github.com/yskzctx/phigros-offline-lab/releases)。下载同一版本的全部 `Phigros-offline-166.7z.00*` 分卷及 `SHA256SUMS.txt`，放在同一文件夹，用 7-Zip 打开 `.7z.001` 解压得到 APK。分卷不是 APK。校验文件同时记录分卷和解压后的 APK 的 SHA-256。Git 历史不存放大型 APK。
+[进入 Releases](https://github.com/yskzctx/phigros-offline-lab/releases)。下载同一版本的全部 `Phigros-offline-167.7z.00*` 分卷及 `SHA256SUMS.txt`，放在同一文件夹，用 7-Zip 打开 `.7z.001` 解压得到 APK。分卷不是 APK。校验文件同时记录分卷和解压后的 APK 的 SHA-256。Git 历史不存放大型 APK。
 
-修改版包名 `com.PigeonGames.Phigros.offline`，正版 `com.PigeonGames.Phigros`。不同签名、独立应用数据目录。166 沿用本项目的修改版签名，可覆盖升级 164/165，无须卸载；卸载会删除修改版内部数据。先备份自己的正版 APK 和存档，勿把修改版数据覆盖到正版。运行不需要 root、LSPosed 或 Frida。
+修改版包名 `com.PigeonGames.Phigros.offline`，正版 `com.PigeonGames.Phigros`。不同签名、独立应用数据目录。167 沿用本项目的修改版签名，可覆盖升级 164/165/166，无须卸载；卸载会删除修改版内部数据。先备份自己的正版 APK 和存档，勿把修改版数据覆盖到正版。运行不需要 root、LSPosed 或 Frida。
 
 ![165 浅色界面预览，非真机截图](docs/controls165-preview.jpg)
+
+## 167 储存修复
+
+停止复制整套游戏资源，改从已安装 APK 读取；升级后首次启动回收旧资源副本，存档与备份保留。浮窗、自动游玩、规则、RKS 和 Data 功能保持与 166 一致。本机覆盖安装后，用户确认基本游玩正常；ADB 实测总占用从约 6.71 GB 降至约 3.42 GB，内部数据仅约 8 MB。详见 [167 修改与验证](CHANGELOG-167.md)，此结果不代表全部设备和内容页均已遍历。
 
 ## 166 修复
 

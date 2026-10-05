@@ -1,0 +1,35 @@
+{
+  "artifact": "Phigros-4.0.1-157-offline-arm64-controls-v167.apk",
+  "version_code": 167,
+  "apk_bytes": 3305640430,
+  "sha256": "d94a55a1bc2e3188729fb7e1ba2b8c9a0b5aa41074cb7b4ab95e9e8461857282",
+  "changed_zip_entries": [
+    "AndroidManifest.xml",
+    "classes2.dex"
+  ],
+  "changed_game_source": [
+    "OfflineAssets.java"
+  ],
+  "preserved_ui_native_game_resources_and_seed": true,
+  "signature_verified": true,
+  "alignment_verified": true,
+  "resource_index_count": 2724,
+  "storage_regression_assertions": 23,
+  "internet_permission": false,
+  "root_required_for_runtime": false,
+  "device_tested": true,
+  "installed": true,
+  "release_type_requested": "stable",
+  "installed_version_code": 167,
+  "private_modified_data_backup_verified": true,
+  "phone_ui_operated": false,
+  "device_validation_source": "user manually reported startup, chapter, gameplay/audio and collection usable; ADB read-only version and storage verification",
+  "device_data_kib_before": 3220418,
+  "device_data_kib_after": 8052,
+  "device_installation_kib_after": 3331806,
+  "legacy_resource_directory_absent": true,
+  "resource_direct_startup_log_verified": false,
+  "device_log_buffer_available": false,
+  "archive_extraction_sha256_verified": true,
+  "original_package_still_installed": true
+}
