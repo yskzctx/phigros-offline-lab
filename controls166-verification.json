@@ -1,0 +1,38 @@
+{
+  "artifact": "Phigros-4.0.1-157-offline-arm64-controls-v166.apk",
+  "version_code": 166,
+  "sha256": "df801d5fd4a507e776362fbd3a9d3fc37538c0c6c2c88dd482cebeefee0c8918",
+  "all_unity_and_game_native_resources_crc_preserved": true,
+  "signature_verified": true,
+  "alignment_verified": true,
+  "permission": "SYSTEM_ALERT_WINDOW",
+  "internet_permission": false,
+  "root_required_for_runtime": false,
+  "device_tested": false,
+  "only_changed_apk_entries": [
+    "AndroidManifest.xml",
+    "classes2.dex",
+    "assets/offline/controls-ui.html"
+  ],
+  "mode_validation_regression_passed": true,
+  "existing_rules_regression_passed": true,
+  "browser_rule_picker": {
+    "panel_local": true,
+    "six_position_types_selectable": true,
+    "last_option_clickable_at_620x300": true,
+    "cancel_preserves_selection": true,
+    "viewports": [
+      [
+        620,
+        300
+      ],
+      [
+        360,
+        520
+      ]
+    ],
+    "javascript_errors": 0
+  },
+  "installed": false,
+  "archive_extraction_sha256_verified": true
+}

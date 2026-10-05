@@ -18,16 +18,25 @@ public final class ControlsConfig {
         for(Rule r:rules){packed[i++]=r.judgment;packed[i++]=r.position;packed[i++]=r.start;packed[i++]=r.end;packed[i++]=r.count;packed[i++]=r.indices.length;for(int v:r.indices)packed[i++]=v;}
     }
     private static int bounded(String s,int low,int high,String label) {
-        try {int v=Integer.parseInt(s.trim());if(v>=low && v<=high)return v;}
+        try {int v=Integer.parseInt(s==null?"":s.trim());if(v>=low && v<=high)return v;}
         catch(NumberFormatException ignored){}
         throw new IllegalArgumentException(label+"须为 "+low+"～"+high+" 的整数");
     }
-    public static ControlsConfig parse(int mode,String target,String accuracy,String text) {
-        if(mode<0||mode>2)throw new IllegalArgumentException("未知游玩模式");
-        int t=bounded(target,0,1000000,"目标分数");
+    private static int percentage(String accuracy) {
         if(accuracy==null||!accuracy.trim().matches("[0-9]{1,3}(\\.[0-9]{1,2})?"))throw new IllegalArgumentException("准确率支持两位小数，例如 90.25");
         int a=new BigDecimal(accuracy.trim()).multiply(new BigDecimal(100)).intValueExact();
         if(a<0||a>10000)throw new IllegalArgumentException("准确率须为 0～100%");
+        return a;
+    }
+    public static ControlsConfig parse(int mode,String target,String accuracy,String text) {
+        if(mode<0||mode>2)throw new IllegalArgumentException("未知游玩模式");
+        int t=1000000,a=10000;
+        // Only the active target is required. Retain valid inactive values;
+        // normalize empty/invalid hidden fields before saving or JNI dispatch.
+        if(mode==1)t=bounded(target,0,1000000,"目标分数");
+        else try{t=bounded(target,0,1000000,"目标分数");}catch(IllegalArgumentException ignored){}
+        if(mode==2)a=percentage(accuracy);
+        else try{a=percentage(accuracy);}catch(IllegalArgumentException ignored){}
         if(text==null||text.length()>96000)throw new IllegalArgumentException("规则列表过长");
         ArrayList<Rule> rules=new ArrayList<Rule>();
         if(!text.trim().isEmpty())for(String row:text.trim().split(";",-1)){
