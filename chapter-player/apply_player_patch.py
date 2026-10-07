@@ -5,6 +5,8 @@ entry=source/'phira/src/lib.rs';text=entry.read_text(encoding='utf-8')
 assert 'pub extern "C" fn quad_main()' in text and 'async fn the_main()' in text
 assert 'pub mod local_chapter;' not in text
 shutil.copy2(payload/'local_chapter.rs',source/'phira/src/local_chapter.rs')
+(source/'phira/src/local_chapter').mkdir(exist_ok=True)
+shutil.copy2(payload/'path_scope.rs',source/'phira/src/local_chapter/path_scope.rs')
 text='pub mod local_chapter;\n'+text
 needle='if let Err(err) = the_main().await {'
 assert text.count(needle)==1

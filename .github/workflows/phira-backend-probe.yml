@@ -42,6 +42,15 @@ jobs:
           echo "CXX_aarch64_linux_android=$ndk_bin/aarch64-linux-android26-clang++" >> "$GITHUB_ENV"
       - name: Apply reviewed offline-only chapter entry
         run: python3 ../module-source/chapter-player/apply_player_patch.py .
+      - name: Test local directory containment
+        run: |
+          rustc +nightly-2026-01-01 --edition 2021 --test ../module-source/chapter-player/path_scope.rs -o chapter-path-tests
+          ./chapter-path-tests
+      - name: Cache native dependencies
+        uses: Swatinem/rust-cache@49a0bdc70d2e1b713ca9e2869b211fcce03d3c1c
+        with:
+          workspaces: upstream -> target
+          cache-on-failure: "true"
       - name: Build native local chapter candidate
         shell: bash
         run: |

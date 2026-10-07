@@ -9,6 +9,7 @@ use prpr::{config::{Config, Mods}, core::{BOLD_FONT, PGR_FONT}, fs::{fs_from_fil
     ui::{FontArc, TextPainter, Ui}};
 use serde::{Deserialize, Serialize};
 use std::{any::Any, path::{Path, PathBuf}, sync::Mutex};
+mod path_scope;
 
 #[derive(Clone, Default, Deserialize, Serialize)]
 pub struct ChapterRequest {
@@ -20,8 +21,7 @@ static REQUEST: Lazy<Mutex<Option<ChapterRequest>>> = Lazy::new(|| Mutex::new(No
 
 fn validate(request: &ChapterRequest) -> Result<(PathBuf, PathBuf)> {
     let root=std::fs::canonicalize(&request.data_root).context("chapter root missing")?;
-    let path=std::fs::canonicalize(&request.directory).context("chapter directory missing")?;
-    if !path.starts_with(&root)||path==root||!path.is_dir(){bail!("chart directory outside local chapter root");}
+    let path=path_scope::owned_chart(&root,Path::new(&request.directory)).context("chart directory outside local chapter root")?;
     Ok((root,path))
 }
 
@@ -39,7 +39,7 @@ pub fn requested()->bool {REQUEST.lock().unwrap().is_some()}
 #[cfg(target_os="android")]
 fn finish_activity(){
     use jni::{jni_sig,jni_str,objects::JObject,vm::JavaVM};
-    if let Some(vm)=JavaVM::singleton(){let _=vm.attach_current_thread(|env|->jni::errors::Result<()>{
+    if let Ok(vm)=JavaVM::singleton(){let _=vm.attach_current_thread(|env|->jni::errors::Result<()>{
         let context=unsafe{JObject::from_raw(env,ndk_context::android_context().context() as _)};
         env.call_method(context,jni_str!("finishChapter"),jni_sig!("()V"),&[])?;Ok(())
     });}
@@ -71,7 +71,7 @@ pub async fn run()->Result<()> {
     PGR_FONT.with(|f|*f.borrow_mut()=Some(TextPainter::new(pgr,None)));
     let mut painter=TextPainter::new(font,None);
     let mut fs=fs_from_file(Path::new(&path))?;
-    let mut info=load_info(fs.as_mut()).await?;
+    let info=load_info(fs.as_mut()).await?;
     // This entry accepts only locally authored bundles. Do not convert an online
     // identity/unlock resource into an unlocked local chart by stripping fields.
     if info.id.is_some()||info.uploader.is_some()||info.unlock_video.is_some(){bail!("online identity or unlock video is not supported in this local chapter entry");}
