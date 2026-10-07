@@ -1,4 +1,4 @@
-name: Phira 0.8.2 ARM64 backend probe
+name: Local chapter ARM64 integration candidate
 on:
   push:
     branches: [feature/phira-lsp-backend]
@@ -12,12 +12,21 @@ jobs:
   build:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: upstream
     steps:
+      - name: Checkout chapter integration code
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          path: module-source
+          persist-credentials: false
       - name: Checkout pinned upstream source
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           repository: TeamFlos/phira
           ref: c830dee5e07a2b8f06104576f30d8045e0859aa7
+          path: upstream
           persist-credentials: false
       - name: Toolchain and Android linker
         shell: bash
@@ -31,19 +40,22 @@ jobs:
           echo "CC_aarch64_linux_android=$ndk_bin/aarch64-linux-android26-clang" >> "$GITHUB_ENV"
           echo "AR_aarch64_linux_android=$ndk_bin/llvm-ar" >> "$GITHUB_ENV"
           echo "CXX_aarch64_linux_android=$ndk_bin/aarch64-linux-android26-clang++" >> "$GITHUB_ENV"
-      - name: Build unmodified native backend for integration feasibility
+      - name: Apply reviewed offline-only chapter entry
+        run: python3 ../module-source/chapter-player/apply_player_patch.py .
+      - name: Build native local chapter candidate
         shell: bash
         run: |
           cargo +nightly-2026-01-01 build --locked --release --target aarch64-linux-android -p phira --no-default-features
           test -f target/aarch64-linux-android/release/libphira.so
           sha256sum target/aarch64-linux-android/release/libphira.so > BACKEND-SHA256.txt
-      - name: Save unsigned probe only
+      - name: Save unsigned candidate backend only
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: phira-0.8.2-arm64-unmodified-backend-probe
+          name: local-chapter-arm64-backend-candidate
           path: |
-            target/aarch64-linux-android/release/libphira.so
-            BACKEND-SHA256.txt
-            LICENSE
+            upstream/target/aarch64-linux-android/release/libphira.so
+            upstream/BACKEND-SHA256.txt
+            upstream/LICENSE
+            module-source/chapter-player/
           retention-days: 7
           if-no-files-found: error
