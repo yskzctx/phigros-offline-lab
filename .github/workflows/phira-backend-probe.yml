@@ -1,0 +1,49 @@
+name: Phira 0.8.2 ARM64 backend probe
+on:
+  push:
+    branches: [feature/phira-lsp-backend]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: phira-backend-probe-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout pinned upstream source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: TeamFlos/phira
+          ref: c830dee5e07a2b8f06104576f30d8045e0859aa7
+          persist-credentials: false
+      - name: Toolchain and Android linker
+        shell: bash
+        run: |
+          rustup toolchain install nightly-2026-01-01 --profile minimal --target aarch64-linux-android
+          ndk_directory=$(find "$ANDROID_SDK_ROOT/ndk" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)
+          test -n "$ndk_directory"
+          ndk_bin="$ndk_directory/toolchains/llvm/prebuilt/linux-x86_64/bin"
+          test -x "$ndk_bin/aarch64-linux-android26-clang"
+          echo "CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER=$ndk_bin/aarch64-linux-android26-clang" >> "$GITHUB_ENV"
+          echo "CC_aarch64_linux_android=$ndk_bin/aarch64-linux-android26-clang" >> "$GITHUB_ENV"
+          echo "AR_aarch64_linux_android=$ndk_bin/llvm-ar" >> "$GITHUB_ENV"
+          echo "CXX_aarch64_linux_android=$ndk_bin/aarch64-linux-android26-clang++" >> "$GITHUB_ENV"
+      - name: Build unmodified native backend for integration feasibility
+        shell: bash
+        run: |
+          cargo +nightly-2026-01-01 build --locked --release --target aarch64-linux-android -p phira --no-default-features
+          test -f target/aarch64-linux-android/release/libphira.so
+          sha256sum target/aarch64-linux-android/release/libphira.so > BACKEND-SHA256.txt
+      - name: Save unsigned probe only
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: phira-0.8.2-arm64-unmodified-backend-probe
+          path: |
+            target/aarch64-linux-android/release/libphira.so
+            BACKEND-SHA256.txt
+            LICENSE
+          retention-days: 7
+          if-no-files-found: error
