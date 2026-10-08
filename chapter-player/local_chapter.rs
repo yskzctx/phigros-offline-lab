@@ -16,12 +16,18 @@ pub struct ChapterRequest {
     pub directory: String,
     pub data_root: String,
     pub autoplay: bool,
+    #[serde(default)]
+    pub skin_directory: Option<String>,
 }
 static REQUEST: Lazy<Mutex<Option<ChapterRequest>>> = Lazy::new(|| Mutex::new(None));
 
 fn validate(request: &ChapterRequest) -> Result<(PathBuf, PathBuf)> {
     let root=std::fs::canonicalize(&request.data_root).context("chapter root missing")?;
     let path=path_scope::owned_chart(&root,Path::new(&request.directory)).context("chart directory outside local chapter root")?;
+    if let Some(skin)=request.skin_directory.as_ref(){
+        let skin_root=root.parent().context("chapter parent missing")?.join("offline-chapter-skins");
+        path_scope::owned_chart(&skin_root,Path::new(skin)).context("skin outside private chapter skin root")?;
+    }
     Ok((root,path))
 }
 
@@ -77,6 +83,7 @@ pub async fn run()->Result<()> {
     if info.id.is_some()||info.uploader.is_some()||info.unlock_video.is_some(){bail!("online identity or unlock video is not supported in this local chapter entry");}
     let mut config=Config::default();config.offline_mode=true;config.mp_enabled=false;config.player_name="本地自制章节".into();
     config.mods.set(Mods::AUTOPLAY,request.autoplay);
+    config.res_pack_path=request.skin_directory.clone();
     let record_path=path.join("local-record.json");
     let save=if request.autoplay{None}else{Some(Box::new(move |record:prpr::scene::SimpleRecord|->Result<()>{
         let bytes=serde_json::to_vec(&record)?;let tmp=record_path.with_extension("json.tmp");std::fs::write(&tmp,bytes)?;std::fs::rename(tmp,&record_path)?;Ok(())
@@ -98,6 +105,6 @@ pub async fn run()->Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    #[test] fn reject_directory_outside_root(){let root=tempfile::tempdir().unwrap();let other=tempfile::tempdir().unwrap();let r=ChapterRequest{directory:other.path().to_string_lossy().into(),data_root:root.path().to_string_lossy().into(),autoplay:false};assert!(validate(&r).is_err());}
-    #[test] fn accept_owned_chart_subdirectory(){let root=tempfile::tempdir().unwrap();let p=root.path().join("charts/local-1");std::fs::create_dir_all(&p).unwrap();let r=ChapterRequest{directory:p.to_string_lossy().into(),data_root:root.path().to_string_lossy().into(),autoplay:false};assert_eq!(validate(&r).unwrap().1,std::fs::canonicalize(p).unwrap());}
+    #[test] fn reject_directory_outside_root(){let root=tempfile::tempdir().unwrap();let other=tempfile::tempdir().unwrap();let r=ChapterRequest{directory:other.path().to_string_lossy().into(),data_root:root.path().to_string_lossy().into(),..Default::default()};assert!(validate(&r).is_err());}
+    #[test] fn accept_owned_chart_subdirectory(){let root=tempfile::tempdir().unwrap();let p=root.path().join("charts/local-1");std::fs::create_dir_all(&p).unwrap();let r=ChapterRequest{directory:p.to_string_lossy().into(),data_root:root.path().to_string_lossy().into(),..Default::default()};assert_eq!(validate(&r).unwrap().1,std::fs::canonicalize(p).unwrap());}
 }
