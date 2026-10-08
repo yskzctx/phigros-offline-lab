@@ -46,6 +46,10 @@ jobs:
         run: |
           rustc +nightly-2026-01-01 --edition 2021 --test ../module-source/chapter-player/path_scope.rs -o chapter-path-tests
           ./chapter-path-tests
+      - name: Test local gameplay planning
+        run: |
+          rustc +nightly-2026-01-01 --edition 2021 --test ../module-source/chapter-player/planner.rs -o chapter-plan-tests
+          ./chapter-plan-tests
       - name: Cache native dependencies
         uses: Swatinem/rust-cache@49a0bdc70d2e1b713ca9e2869b211fcce03d3c1c
         with:
