@@ -1,0 +1,27 @@
+{
+  "candidate": 172,
+  "native_build_run": 37760257111,
+  "upstream_commit": "c830dee5e07a2b8f06104576f30d8045e0859aa7",
+  "original_phira_apk_sha256": "b6ee79958c21bc66187b8d8697257617eedd440af5b042a7b8920cc297bef3b0",
+  "java_sources": {
+    "quad_native/QuadNative.java": "2ec6d6b9d9a312381128d1424393411c324544ec818289e1fdced43b2d5d2468",
+    "com/phigros/offline/ChapterLibraryActivity.java": "fb2207cab7702f6b2d7c77f660311ce53bcd83f728183b61c07f4ec05f97d007",
+    "com/phigros/offline/ChapterPack.java": "96241a32781a52922169f157d48f961f04fe7fe036f9a9fc96a345cc5de5530d",
+    "com/phigros/offline/ChapterPlayerActivity.java": "3822b53104400b75218a3e6fc2a83c404a64290bae3e7ae688ed9ea4eb50bf16",
+    "com/phigros/offline/ChapterProcess.java": "7c3f692a30eb4189bd021239cb0affe833b4ffb54f649bd5e3cffb30e2a95ab3",
+    "com/phigros/offline/ChapterSkinExport.java": "ec11630e79f3d081faa38d10eb7a2ad9a0c0473ec85166c38272cd9846567cda",
+    "com/phigros/offline/ControlsConfig.java": "bc98c19afde78160051aab6081f19e76961e96f7d6cbdc12b99135912dbf8dfc",
+    "com/phigros/offline/LaunchActivity.java": "3eba61c460a26d900a94fa553f33ff4ea3bbe5ab65dfb82a88a7625be9a9c6c7",
+    "com/phigros/offline/NativeControls.java": "2ea246f5f0b486c8001dd46630e387efb3b11c9f1f7bc3a2a6a4bb0cf9fcf929",
+    "com/phigros/offline/OfflineApplication.java": "2ae7dc9cfa3e99958a6ebf286bad69e51b9e10ad1a67697294cb3b7930e7355e",
+    "com/phigros/offline/OfflineAssets.java": "6d1d6b28e8c26ea05fd69d98b246f46309dc2efe6ac2884084112e52041bb3ae",
+    "com/phigros/offline/OfflineHttp.java": "135a2d9004e5573fff2654e03fe9e9d3c3e6c66d2d3d531eef9196f972c01070",
+    "com/phigros/offline/OverlayMenu.java": "3eb9b6bf8773a6e509326e5ca93c5506629c1d1a5ece9f00a13eb4dd2020a59a",
+    "com/phigros/offline/RksEditor.java": "fbc0d43d5e5e60e2e95d34afe23a37ea24c6ad3a5bd04c26788d4994a04d6d68",
+    "com/phigros/offline/RksPlanner.java": "9fc1c8d90c8361156c4f6b23d3bc8d2feecc09948ea63edf19124fec2655b075",
+    "com/phigros/offline/SkinActivity.java": "23a5b842940b6d73ad5b5dc79654ca2f7637f4371d94ddbdf3e2d764446f0ef1",
+    "com/phigros/offline/SkinController.java": "5cf5f682d332aaf1fab48f29b4eb4e4ce2a2a1d0ddaa7386d3be861ec266bfeb",
+    "com/phigros/offline/SkinPack.java": "7b7ab1a32cbd393e0b0afdd9ead454d0a0eeb696325407cecec3d4fe256475cc"
+  },
+  "device_tested": false
+}
