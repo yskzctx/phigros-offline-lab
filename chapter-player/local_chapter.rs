@@ -18,7 +18,11 @@ pub struct ChapterRequest {
     pub autoplay: bool,
     #[serde(default)]
     pub skin_directory: Option<String>,
+    #[serde(default)]
+    pub controls: Option<ChapterControlRequest>,
 }
+#[derive(Clone,Deserialize,Serialize)]
+pub struct ChapterControlRequest {pub mode:i32,pub target:i32,pub accuracy:i32,pub rules:String}
 static REQUEST: Lazy<Mutex<Option<ChapterRequest>>> = Lazy::new(|| Mutex::new(None));
 
 fn validate(request: &ChapterRequest) -> Result<(PathBuf, PathBuf)> {
@@ -28,6 +32,7 @@ fn validate(request: &ChapterRequest) -> Result<(PathBuf, PathBuf)> {
         let skin_root=root.parent().context("chapter parent missing")?.join("offline-chapter-skins");
         path_scope::owned_chart(&skin_root,Path::new(skin)).context("skin outside private chapter skin root")?;
     }
+    if let Some(c)=request.controls.as_ref(){prpr::chapter_controls::planner::Controls::parse(c.mode,c.target,c.accuracy,&c.rules).map_err(anyhow::Error::msg)?;}
     Ok((root,path))
 }
 
@@ -84,6 +89,8 @@ pub async fn run()->Result<()> {
     let mut config=Config::default();config.offline_mode=true;config.mp_enabled=false;config.player_name="本地自制章节".into();
     config.mods.set(Mods::AUTOPLAY,request.autoplay);
     config.res_pack_path=request.skin_directory.clone();
+    let controls=if request.autoplay{request.controls.as_ref().map(|c|prpr::chapter_controls::planner::Controls::parse(c.mode,c.target,c.accuracy,&c.rules)).transpose().map_err(anyhow::Error::msg)?}else{None};
+    prpr::chapter_controls::configure(controls);
     let record_path=path.join("local-record.json");
     let save=if request.autoplay{None}else{Some(Box::new(move |record:prpr::scene::SimpleRecord|->Result<()>{
         let bytes=serde_json::to_vec(&record)?;let tmp=record_path.with_extension("json.tmp");std::fs::write(&tmp,bytes)?;std::fs::rename(tmp,&record_path)?;Ok(())
