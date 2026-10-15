@@ -1,5 +1,8 @@
 # Phigros 离线共存测试项目
 
+**172 预发行版（待真机验证）**：[发布页面](https://github.com/yskzctx/phigros-offline-lab/releases/tag/v172-pre.1) · [安装与测试说明](docs/INSTALL-172.md) · [更新记录](CHANGELOG-172.md)。自制章节、谱面导入与音符皮肤合并为一个 APK；两个 LSPosed 模块及面向 Phira 原版的独立开发计划已取消。167 继续作为正式版。
+
+
 基于 Phigros 4.0.1（157）的非官方 arm64 本地测试修改版。当前版本为 **167 正式版：仅修复资源重复储存**。
 
 ## 下载与安装
