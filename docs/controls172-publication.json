@@ -1,0 +1,80 @@
+{
+  "release": "https://github.com/yskzctx/phigros-offline-lab/releases/tag/v172-pre.1",
+  "tag": "v172-pre.1",
+  "source_commit": "70f36e200bfa670e0a2efdb1eb6183afff27442b",
+  "draft": false,
+  "prerelease": true,
+  "latest_stable": "v167",
+  "remote_asset_digests_and_sizes_verified": true,
+  "public_downloads": [
+    {
+      "name": "demo-chart-four-notes.pez",
+      "public_access": true,
+      "method": "GET SHA256"
+    },
+    {
+      "name": "demo-note-skin.zip",
+      "public_access": true,
+      "method": "GET SHA256"
+    },
+    {
+      "name": "INSTALL-172.md",
+      "public_access": true,
+      "method": "GET SHA256"
+    },
+    {
+      "name": "Phigros-offline-172-pre.1.7z.001",
+      "public_access": true,
+      "method": "HEAD size"
+    },
+    {
+      "name": "Phigros-offline-172-pre.1.7z.002",
+      "public_access": true,
+      "method": "HEAD size"
+    },
+    {
+      "name": "Phigros-offline-172-pre.1.7z.003",
+      "public_access": true,
+      "method": "HEAD size"
+    },
+    {
+      "name": "SHA256SUMS.txt",
+      "public_access": true,
+      "method": "GET SHA256"
+    }
+  ],
+  "archive_stream_extraction_sha256_verified": true,
+  "device_tested": false,
+  "installed": false,
+  "module_and_independent_phira_plans_cancelled": true,
+  "assets": {
+    "Phigros-offline-172-pre.1.7z.001": {
+      "bytes": 1073741824,
+      "sha256": "8e26b95d82a5d984bd54d903901c1e3ed0cf644431306c83bb95f926195df97d"
+    },
+    "Phigros-offline-172-pre.1.7z.002": {
+      "bytes": 1073741824,
+      "sha256": "1441cb91a5730daf02b99f89ff2479a4819086424362b0e22f4882d2bc8a1369"
+    },
+    "Phigros-offline-172-pre.1.7z.003": {
+      "bytes": 667234259,
+      "sha256": "d266a8c3e7b2f16bda1207dea6ac47a808f2de10fe881aaf819643248ab5b60d"
+    },
+    "INSTALL-172.md": {
+      "bytes": 4511,
+      "sha256": "38f377367437f255a83fdcd744179921f112847fc28b6e8360f5c955401756ca"
+    },
+    "demo-chart-four-notes.pez": {
+      "bytes": 422291,
+      "sha256": "06a2d0af3dfab916354d189a41ee225dd0d84cc8207d33c31b45f24de52d0496"
+    },
+    "demo-note-skin.zip": {
+      "bytes": 2089,
+      "sha256": "2fd465c0dc9dce0bd27e2d8717f7cb6bef7a123e127922a7c3c12362abe25054"
+    },
+    "SHA256SUMS.txt": {
+      "bytes": 697,
+      "sha256": "08fb6742338e106494638b900fd1bf2e4e81b2ddf40d1e4f3b185084f59d0c02"
+    }
+  }
+}
