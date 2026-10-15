@@ -51,5 +51,37 @@
     "zipalign_16k": true,
     "apk_sha256": true,
     "device_tested": false
+  },
+  "archive_stream_extraction_sha256_verified": true,
+  "archive_extracted_bytes": 3343060101,
+  "public_assets": {
+    "Phigros-offline-172-pre.1.7z.001": {
+      "bytes": 1073741824,
+      "sha256": "8e26b95d82a5d984bd54d903901c1e3ed0cf644431306c83bb95f926195df97d"
+    },
+    "Phigros-offline-172-pre.1.7z.002": {
+      "bytes": 1073741824,
+      "sha256": "1441cb91a5730daf02b99f89ff2479a4819086424362b0e22f4882d2bc8a1369"
+    },
+    "Phigros-offline-172-pre.1.7z.003": {
+      "bytes": 667234259,
+      "sha256": "d266a8c3e7b2f16bda1207dea6ac47a808f2de10fe881aaf819643248ab5b60d"
+    },
+    "安装与测试说明.md": {
+      "bytes": 4479,
+      "sha256": "387919b5cbc330f061b47bedae9e81858c514fd18c2e49e275131ccc7f5163c2"
+    },
+    "原创自制章节测试-四种音符.pez": {
+      "bytes": 422291,
+      "sha256": "06a2d0af3dfab916354d189a41ee225dd0d84cc8207d33c31b45f24de52d0496"
+    },
+    "原创测试音符皮肤-标准图集.zip": {
+      "bytes": 2089,
+      "sha256": "2fd465c0dc9dce0bd27e2d8717f7cb6bef7a123e127922a7c3c12362abe25054"
+    },
+    "SHA256SUMS.txt": {
+      "bytes": 746,
+      "sha256": "80221fbbd58cb7e1907f7c8aed8e341c59de0080a1fdf0c25b748f3c3b8e009c"
+    }
   }
 }
