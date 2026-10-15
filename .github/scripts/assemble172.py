@@ -1,5 +1,5 @@
 """One manually dispatched transfer; never publish the draft or change game code."""
-import hashlib,json,os,re,subprocess,tempfile,urllib.request
+import hashlib,json,os,re,subprocess,tempfile,time,urllib.request,urllib.parse
 from pathlib import Path
 
 repo=os.environ['GITHUB_REPOSITORY'];assert repo=='yskzctx/phigros-offline-lab'
@@ -25,8 +25,19 @@ class SafeRedirect(urllib.request.HTTPRedirectHandler):
 
 opener=urllib.request.build_opener(SafeRedirect())
 with tempfile.TemporaryDirectory(prefix='release172-')as temp:
+    deadline=time.monotonic()+20*60
     for part in manifest['parts']:
         assert re.fullmatch(r'Phigros-offline-172-pre\.1\.7z\.00[123]',part['name'])
+        last_count=-1
+        while True:
+            live=api(f'repos/{repo}/releases/413658150')
+            assert live['draft'] and live['tag_name']=='transfer-172-20261015'
+            assets={a['name']:a for a in live['assets']}
+            available=sum(c['name']in assets and assets[c['name']]['state']=='uploaded' for c in part['chunks'])
+            if available==len(part['chunks']):break
+            assert time.monotonic()<deadline,'Temporary chunk upload deadline exceeded'
+            if available!=last_count:print(f"Waiting for {part['name']}: {available}/{len(part['chunks'])} chunks",flush=True);last_count=available
+            time.sleep(10)
         path=Path(temp)/part['name'];whole=hashlib.sha256();size=0
         with path.open('wb')as output:
             for chunk in part['chunks']:
@@ -34,6 +45,7 @@ with tempfile.TemporaryDirectory(prefix='release172-')as temp:
                 asset=assets[chunk['name']]
                 assert asset['state']=='uploaded' and asset['size']==chunk['bytes']
                 assert asset['digest']=='sha256:'+chunk['sha256']
+                assert asset['url'].startswith(f'https://api.github.com/repos/{repo}/releases/assets/')
                 request=urllib.request.Request(asset['url'],headers={
                     'Authorization':'Bearer '+os.environ['GH_TOKEN'],
                     'Accept':'application/octet-stream','User-Agent':'Phigros-172-transfer'})
