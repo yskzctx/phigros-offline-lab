@@ -67,21 +67,21 @@
       "bytes": 667234259,
       "sha256": "d266a8c3e7b2f16bda1207dea6ac47a808f2de10fe881aaf819643248ab5b60d"
     },
-    "安装与测试说明.md": {
-      "bytes": 4479,
-      "sha256": "387919b5cbc330f061b47bedae9e81858c514fd18c2e49e275131ccc7f5163c2"
+    "INSTALL-172.md": {
+      "bytes": 4511,
+      "sha256": "38f377367437f255a83fdcd744179921f112847fc28b6e8360f5c955401756ca"
     },
-    "原创自制章节测试-四种音符.pez": {
+    "demo-chart-four-notes.pez": {
       "bytes": 422291,
       "sha256": "06a2d0af3dfab916354d189a41ee225dd0d84cc8207d33c31b45f24de52d0496"
     },
-    "原创测试音符皮肤-标准图集.zip": {
+    "demo-note-skin.zip": {
       "bytes": 2089,
       "sha256": "2fd465c0dc9dce0bd27e2d8717f7cb6bef7a123e127922a7c3c12362abe25054"
     },
     "SHA256SUMS.txt": {
-      "bytes": 746,
-      "sha256": "80221fbbd58cb7e1907f7c8aed8e341c59de0080a1fdf0c25b748f3c3b8e009c"
+      "bytes": 697,
+      "sha256": "08fb6742338e106494638b900fd1bf2e4e81b2ddf40d1e4f3b185084f59d0c02"
     }
   }
 }
