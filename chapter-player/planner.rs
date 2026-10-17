@@ -9,7 +9,7 @@ impl Controls {
   let mut rules=Vec::new();
   if !text.trim().is_empty(){for row in text.trim().split(';'){
    let p=row.split(':').collect::<Vec<_>>();if p.len()!=6&&p.len()!=7{return Err("invalid rule fields".into());}
-   let judgment=number(p[0],1,3)? as u8;let position=number(p[1],1,6)? as u8;let start=number(p[2],1,20000)?;let end=number(p[3],1,20000)?;let count=number(p[4],1,20000)?;
+   let judgment=number(p[0],0,3)? as u8;let position=number(p[1],1,6)? as u8;let start=number(p[2],1,20000)?;let end=number(p[3],1,20000)?;let count=number(p[4],1,20000)?;
    if position==2&&end<start{return Err("reversed range".into());}
    let mut indices=Vec::new();if p[5].len()>12000{return Err("rule list too long".into());}
    if !p[5].trim().is_empty(){for s in p[5].replace('，',",").split(','){let n=number(s,1,20000)?;if !indices.contains(&n){indices.push(n);}if indices.len()>1024{return Err("too many indices".into());}}}
@@ -26,6 +26,25 @@ pub fn estimate(p:&[u8])->Estimate{
  let n=p.len()as i64;Estimate{score:((points*9000+max_combo*100000+n/2)/n)as i32,accuracy:((points*100+n/2)/n)as i32}
 }
 pub fn plan(c:&Controls,types:&[u8],seed:u32)->Vec<u8>{
+ plan_timed(c,types,seed,&[])
+}
+// Delays match the opt-in local judge; Hold scores on release, not on press.
+pub fn event_time(start:f64,end:f64,kind:u8,judgment:u8)->f64{
+ match judgment{1=>start+0.221,2=>if kind==3{end.max(start+0.12)}else{start+0.12},3=>start+0.19,_=>if kind==3{end.max(start)}else{start}}
+}
+fn timeline(types:&[u8],times:&[(f64,f64)])->Vec<(f64,usize,u8)>{
+ if times.len()!=types.len(){return Vec::new();}
+ let mut events=Vec::with_capacity(types.len()*4);
+ for (i,&(start,end))in times.iter().enumerate(){for j in 0..4{events.push((event_time(start,end,types[i],j),i,j));}}
+ events.sort_by(|a,b|a.0.total_cmp(&b.0).then(a.1.cmp(&b.1)).then(a.2.cmp(&b.2)));events
+}
+fn estimate_timed(p:&[u8],events:&[(f64,usize,u8)])->Estimate{
+ if events.is_empty(){return estimate(p);}
+ let(mut points,mut combo,mut max_combo)=(0i64,0i64,0i64);
+ for &(_,i,j)in events{if p[i]!=j{continue;}match j{0=>{points+=100;combo+=1;},2=>{points+=65;combo+=1;},_=>combo=0}max_combo=max_combo.max(combo);}
+ let n=p.len()as i64;Estimate{score:((points*9000+max_combo*100000+n/2)/n)as i32,accuracy:((points*100+n/2)/n)as i32}
+}
+pub fn plan_timed(c:&Controls,types:&[u8],seed:u32,times:&[(f64,f64)])->Vec<u8>{
  let n=types.len();if n==0||n>20000{return Vec::new();}let mut rng=if seed==0{0x6d2b79f5}else{seed};let mut p=vec![0;n];let mut fixed=vec![false;n];
  for r in &c.rules{
   let eligible=(0..n).filter(|i|!fixed[*i]&&(r.kind==0||types[*i]==r.kind)).collect::<Vec<_>>();
@@ -36,23 +55,34 @@ pub fn plan(c:&Controls,types:&[u8],seed:u32)->Vec<u8>{
   };for i in chosen{p[i]=r.judgment;fixed[i]=true;}
  }
  if c.mode==0{return p;}
- let base=p.clone();let mut best=estimate(&p);let target=if c.mode==1{c.target}else{c.accuracy};let value=|e:Estimate|if c.mode==1{e.score}else{e.accuracy};let mut error=(value(best)-target).abs();let mut changes=0;
+ let events=timeline(types,times);let base=p.clone();let mut best=estimate_timed(&p,&events);let target=if c.mode==1{c.target}else{c.accuracy};let value=|e:Estimate|if c.mode==1{e.score}else{e.accuracy};let mut error=(value(best)-target).abs();let mut changes=0;
  let mut free=(0..n).filter(|i|!fixed[*i]).collect::<Vec<_>>();for i in 0..free.len(){let j=i+random(&mut rng)as usize%(free.len()-i);free.swap(i,j);}
  for pass in 0..160{
   let misses=if pass<40{pass}else{(pass-40)*free.len()/119};if misses>free.len(){continue;}
-  let mut trial=base.clone();for &i in &free[..misses]{trial[i]=1;}let current=estimate(&trial);
+  let mut trial=base.clone();for &i in &free[..misses]{trial[i]=1;}let current=estimate_timed(&trial,&events);
   let raw=if c.mode==1{(current.score-target)as f64*n as f64/315000.}else{(current.accuracy-target)as f64*n as f64/3500.};
   let good_slots=free[misses..].iter().copied().filter(|i|types[*i]==1||types[*i]==3).collect::<Vec<_>>();
   let center=raw.round().max(0.)as usize;
   for offset in -2i32..=2{
    let goods=(center as i32+offset).clamp(0,good_slots.len()as i32)as usize;let mut candidate=trial.clone();for &i in &good_slots[..goods]{candidate[i]=2;}
-   let e=estimate(&candidate);let distance=(value(e)-target).abs();let count=misses+goods;
+   let e=estimate_timed(&candidate,&events);let distance=(value(e)-target).abs();let count=misses+goods;
    if distance<error||(distance==error&&count<changes){p=candidate;best=e;error=distance;changes=count;}
   }
  }let _=best;p
 }
 #[cfg(test)] mod tests {
  use super::*;
+ #[test] fn explicit_perfect_protects_notes_from_later_rules_and_goals(){
+  let c=Controls::parse(2,1_000_000,0,"0:2:1:20:1:;1:6:1:1:1:").unwrap();let p=plan(&c,&vec![1;100],42);
+  assert!(p[..20].iter().all(|j|*j==0));assert!(p[20..].iter().all(|j|*j==1));
+ }
+ #[test] fn hold_tail_order_changes_combo_score(){
+  let events=timeline(&[3,1,1,1],&[(0.,10.),(1.,1.),(2.,2.),(3.,3.)]);
+  assert_eq!(estimate(&[0,1,0,0]).score,725000);
+  assert_eq!(estimate_timed(&[0,1,0,0],&events).score,750000);
+  assert_eq!(estimate_timed(&[0,1,0,0],&events).accuracy,7500);
+ }
+ #[test] fn good_weight_is_sixty_five_percent(){let e=estimate(&[2;100]);assert_eq!(e.score,685000);assert_eq!(e.accuracy,6500);}
  #[test] fn default_is_ap_and_rules_have_priority(){
   let c=Controls::parse(0,1_000_000,10_000,"1:1:100:100:1:;2:2:90:110:1:").unwrap();
   let p=plan(&c,&vec![1;120],123);

@@ -1,7 +1,8 @@
 name: Local chapter ARM64 integration candidate
 on:
   push:
-    branches: [feature/phira-lsp-backend]
+    branches: [fix/173-goals-perfect]
+    paths: ['chapter-player/*.rs', 'chapter-player/apply_player_patch.py', '.github/workflows/phira-backend-probe.yml']
   workflow_dispatch:
 permissions:
   contents: read

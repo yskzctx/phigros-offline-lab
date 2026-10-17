@@ -21,6 +21,17 @@
             }
             while idx.get(*st).is_some_and(|id|matches!(line.notes[*id as usize].judge,JudgeStatus::Judged)){*st+=1;}
         }
+        // Line storage order is not judgment order. Keep same-frame commits in
+        // planned chronological order, including Hold tails and late judgments.
+        events.sort_by(|a,b|{
+            let at=|&(line,id,desired):&(usize,u32,u8)|{
+                let n=&chart.lines[line].notes[id as usize];
+                let end=match n.kind{NoteKind::Hold{end_time,..}=>end_time,_=>n.time};
+                let kind=if matches!(n.kind,NoteKind::Hold{..}){3}else{1};
+                crate::chapter_controls::planner::event_time(n.time,end,kind,desired)
+            };
+            at(a).total_cmp(&at(b)).then(a.0.cmp(&b.0)).then(a.1.cmp(&b.1))
+        });
         for(line_id,id,desired)in events{
             let judgement=match desired{1=>Judgement::Miss,2=>Judgement::Good,3=>Judgement::Bad,_=>Judgement::Perfect};
             let diff=match desired{1=>LIMIT_BAD+0.001,2=>(LIMIT_PERFECT+LIMIT_GOOD)*0.5,3=>(LIMIT_GOOD+LIMIT_BAD)*0.5,_=>0.};
