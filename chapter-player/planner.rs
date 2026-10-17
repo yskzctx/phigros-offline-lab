@@ -110,8 +110,9 @@ pub fn plan_timed(c:&Controls,types:&[u8],seed:u32,times:&[(f64,f64)])->Vec<u8>{
  }
  #[test] fn early_late_good_and_mixed_goals(){
   for j in [4,5]{let c=Controls::parse(0,1_000_000,10000,&format!("{}:6:1:1:1:",j)).unwrap();let p=plan(&c,&vec![1;100],42);assert!(p.iter().all(|v|*v==j));assert_eq!(estimate(&p).accuracy,6500);}
-  let c=Controls::parse(2,1_000_000,9000,"").unwrap();let p=plan(&c,&vec![1;1000],123);
-  assert!(p.contains(&4)&&p.contains(&5));assert!((estimate(&p).accuracy-9000).abs()<10);
+  // 90.00% can use only Misses; 90.25% needs Good to improve the fit.
+  let c=Controls::parse(2,1_000_000,9025,"").unwrap();let p=plan(&c,&vec![1;1000],123);
+  assert!(p.contains(&4)&&p.contains(&5));assert!((estimate(&p).accuracy-9025).abs()<10);
   assert_eq!(event_time(1.,1.,1,4),0.88);assert_eq!(event_time(1.,1.,1,5),1.12);
  }
 }
