@@ -1,0 +1,241 @@
+{
+  "repo": "yskzctx/phigros-offline-lab",
+  "tag": "v173",
+  "source_commit": "5a73aed4479c4fc49f7d40ca7ab5026cc86d147d",
+  "target_release_id": 415584493,
+  "relay_release_id": 415584567,
+  "relay_tag": "transfer-173-20261017",
+  "parts": [
+    {
+      "name": "Phigros-offline-v173.7z.001",
+      "bytes": 1073741824,
+      "sha256": "f0c15ffad998951d51597f1ffde44aa1a15d773ec6a54efcd6e60ec695643708",
+      "chunks": [
+        {
+          "name": "p001-c000.bin",
+          "bytes": 67108864,
+          "sha256": "5c4901ade234be4b4822630ee28810b44518e3ad9f4a21589621fc337ac5f6aa"
+        },
+        {
+          "name": "p001-c001.bin",
+          "bytes": 67108864,
+          "sha256": "7b801fa0104fbed146e070cc38e91457a88db14e1e7f926d35f4a0ba496def3d"
+        },
+        {
+          "name": "p001-c002.bin",
+          "bytes": 67108864,
+          "sha256": "48399e1dab59f009964aa716f3a2d38871215e1d05db6e04859a9e81d52c8831"
+        },
+        {
+          "name": "p001-c003.bin",
+          "bytes": 67108864,
+          "sha256": "e574a205350c5a330351905de81f429857dd0d315456bc15b02ca8a784aa06bf"
+        },
+        {
+          "name": "p001-c004.bin",
+          "bytes": 67108864,
+          "sha256": "4daf25568c28bcf25dcefa3f8c1cafb89feef9c261ef0b49944429295d92fc59"
+        },
+        {
+          "name": "p001-c005.bin",
+          "bytes": 67108864,
+          "sha256": "56c6834e2a6bb8e64ce1391e6dde75eb7caad150aa49fdd697791d465f81f507"
+        },
+        {
+          "name": "p001-c006.bin",
+          "bytes": 67108864,
+          "sha256": "07b7ab8869574d66944ce70c496446db38523f140068054142add1cb4b331818"
+        },
+        {
+          "name": "p001-c007.bin",
+          "bytes": 67108864,
+          "sha256": "d5dd278ea5556f152a9f0dd7f3cbe50b0070f10b0cd868f63197faa6228aa594"
+        },
+        {
+          "name": "p001-c008.bin",
+          "bytes": 67108864,
+          "sha256": "c5af6879db123da200c7fbc9bfcc6ac9954754a2288c8b7ee4856a8d5d247928"
+        },
+        {
+          "name": "p001-c009.bin",
+          "bytes": 67108864,
+          "sha256": "9e2a53f1526abf7f2f8c490350e9f4228aed9f69ca607ee525c1a1b0209fbeb9"
+        },
+        {
+          "name": "p001-c010.bin",
+          "bytes": 67108864,
+          "sha256": "131394e5bf3c85d000570f6203d5822c49337f4fde7deba82c15d324ea9bd952"
+        },
+        {
+          "name": "p001-c011.bin",
+          "bytes": 67108864,
+          "sha256": "c40139ee6a9f6940e8a69f9eef45894b540205969a355506ed95e03f5757b2ba"
+        },
+        {
+          "name": "p001-c012.bin",
+          "bytes": 67108864,
+          "sha256": "0931d838e9fc320fde0c5a78e9292a44c5d875c428740db2ffe0f5adc4f0188d"
+        },
+        {
+          "name": "p001-c013.bin",
+          "bytes": 67108864,
+          "sha256": "520b9a1f70124924a1586cca251c6b66e78d450c1387771ba6f43414a9fef161"
+        },
+        {
+          "name": "p001-c014.bin",
+          "bytes": 67108864,
+          "sha256": "7ead7a9b1d1aa97af3e54082391823399921f202230e7b792187fb158967e578"
+        },
+        {
+          "name": "p001-c015.bin",
+          "bytes": 67108864,
+          "sha256": "7992b995bdf0aace3209c2790cc6c5c66dc4e03f82f054a26fa8034b81a8079a"
+        }
+      ]
+    },
+    {
+      "name": "Phigros-offline-v173.7z.002",
+      "bytes": 1073741824,
+      "sha256": "d7808ca9a9b612e76c684852b19c127ab418c32246689c27a946f45a76682a65",
+      "chunks": [
+        {
+          "name": "p002-c000.bin",
+          "bytes": 67108864,
+          "sha256": "1a7b07460f4a71016b929e2af32700bc1ffa10d9ba95edff2cd7cf02d0628893"
+        },
+        {
+          "name": "p002-c001.bin",
+          "bytes": 67108864,
+          "sha256": "f3fea911f683670cb95e83f35fba49193e9e3d936b209f37b266b3c2dd46c0c0"
+        },
+        {
+          "name": "p002-c002.bin",
+          "bytes": 67108864,
+          "sha256": "9f8051c5580ddd55c772ea37776b51c4e8d69dc4aa78d453d567654dd27df39d"
+        },
+        {
+          "name": "p002-c003.bin",
+          "bytes": 67108864,
+          "sha256": "ee14d6e1767cdd74a3b6341cf1a494151afcbefac1ce1b1b934715a34e580caf"
+        },
+        {
+          "name": "p002-c004.bin",
+          "bytes": 67108864,
+          "sha256": "111d3d7ff6d6970137ae80248100b62666b691fcc1f5198ba1681f558b2b26fe"
+        },
+        {
+          "name": "p002-c005.bin",
+          "bytes": 67108864,
+          "sha256": "45aba6c5edaf9e14c2d7867baa231d09d0437955d000622951adfd96daf23e28"
+        },
+        {
+          "name": "p002-c006.bin",
+          "bytes": 67108864,
+          "sha256": "374f375ce127c517948127a461293a1d824375298e30959588312d9ace21dd5e"
+        },
+        {
+          "name": "p002-c007.bin",
+          "bytes": 67108864,
+          "sha256": "e5a25a49461cad4a94689429f7ceaacc185c9e47fcbcc42633d87a2b7242eafb"
+        },
+        {
+          "name": "p002-c008.bin",
+          "bytes": 67108864,
+          "sha256": "301e3ef85301446cabed813522f551d71d1c56435b7b428311919bddba58c781"
+        },
+        {
+          "name": "p002-c009.bin",
+          "bytes": 67108864,
+          "sha256": "bdb7dc9c5d5182145b7e3b5d12a1471fdff43c5e2bb54f499f851b1fae1771cc"
+        },
+        {
+          "name": "p002-c010.bin",
+          "bytes": 67108864,
+          "sha256": "dcb520f57fbad0b4443fa1cb27e481566b89d3a2779a5f30a1b3de067fbba672"
+        },
+        {
+          "name": "p002-c011.bin",
+          "bytes": 67108864,
+          "sha256": "74c146eaaf64ea8f77203e9a3db1d5825b39374cdc0655334f20df1ec6a51407"
+        },
+        {
+          "name": "p002-c012.bin",
+          "bytes": 67108864,
+          "sha256": "c1c4506c6d9e888427453e75192593e7ecacac911bad02c8a4708c4533851b4c"
+        },
+        {
+          "name": "p002-c013.bin",
+          "bytes": 67108864,
+          "sha256": "b4816bb9e40450524ab136b147a001fd2be85abb6490886f646eda323276c746"
+        },
+        {
+          "name": "p002-c014.bin",
+          "bytes": 67108864,
+          "sha256": "90222317bb9818fe25eb410d7eb690fd1b78f7466f9417a21edae3c6b687ce3a"
+        },
+        {
+          "name": "p002-c015.bin",
+          "bytes": 67108864,
+          "sha256": "959ccfa0445c57c61ab89ce95d9859d563120fd3a74ba40d7b225af09e211cb4"
+        }
+      ]
+    },
+    {
+      "name": "Phigros-offline-v173.7z.003",
+      "bytes": 667241285,
+      "sha256": "636abea5dc718ad2b79d8b1b7df27d421a032c97e6eb6aebe3059b576eac8cfe",
+      "chunks": [
+        {
+          "name": "p003-c000.bin",
+          "bytes": 67108864,
+          "sha256": "0d1758f8c9a3b05fa2c6eaea0ab6898769c5a59eee28d71f2ae19f55bc308f59"
+        },
+        {
+          "name": "p003-c001.bin",
+          "bytes": 67108864,
+          "sha256": "42eea8e262a968ac5eed12604172ce07f237ffa47e38f3017114123dc3cdf187"
+        },
+        {
+          "name": "p003-c002.bin",
+          "bytes": 67108864,
+          "sha256": "573a37318e89215dca3f5e48482f6db64a72638c29edc5590b18ba13793492d2"
+        },
+        {
+          "name": "p003-c003.bin",
+          "bytes": 67108864,
+          "sha256": "fbfe969130120d709611c336da52ef550db1ea73668ea2fd3fc926f30708c7b9"
+        },
+        {
+          "name": "p003-c004.bin",
+          "bytes": 67108864,
+          "sha256": "6080f5b55479555e6186f7281ae0b7adb7038c0d5806c8ec41ab32ed80657e94"
+        },
+        {
+          "name": "p003-c005.bin",
+          "bytes": 67108864,
+          "sha256": "f0eb683f26800065adf8eeb14d02fcf75b258f8989704b39a12437038c00d37e"
+        },
+        {
+          "name": "p003-c006.bin",
+          "bytes": 67108864,
+          "sha256": "b726464b18b486e1eeb32daefc3cc2d7cc9c000c61b18790200fc163cb0dfaa2"
+        },
+        {
+          "name": "p003-c007.bin",
+          "bytes": 67108864,
+          "sha256": "f232d894f3a0bf42bd652166a22333856e1ede1526eef276b1a2ae822035c6a9"
+        },
+        {
+          "name": "p003-c008.bin",
+          "bytes": 67108864,
+          "sha256": "b270c6fe3e307f45ec61d6415b005f3d9077144e5d4c578be3213e09f1c81836"
+        },
+        {
+          "name": "p003-c009.bin",
+          "bytes": 63261509,
+          "sha256": "d5aa94aa1fbbc22740b8cfe3a5643a5e46f1a558861a6beb847eb9580ba6b9ea"
+        }
+      ]
+    }
+  ]
+}
