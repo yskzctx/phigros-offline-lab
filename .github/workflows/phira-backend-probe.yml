@@ -1,0 +1,75 @@
+name: Local chapter ARM64 integration candidate
+on:
+  push:
+    branches: [fix/173-goals-perfect]
+    paths: ['chapter-player/*.rs', 'chapter-player/apply_player_patch.py', '.github/workflows/phira-backend-probe.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: phira-backend-probe-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: upstream
+    steps:
+      - name: Checkout chapter integration code
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          path: module-source
+          persist-credentials: false
+      - name: Checkout pinned upstream source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: TeamFlos/phira
+          ref: c830dee5e07a2b8f06104576f30d8045e0859aa7
+          path: upstream
+          persist-credentials: false
+      - name: Toolchain and Android linker
+        shell: bash
+        run: |
+          rustup toolchain install nightly-2026-01-01 --profile minimal --target aarch64-linux-android
+          ndk_directory=$(find "$ANDROID_SDK_ROOT/ndk" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)
+          test -n "$ndk_directory"
+          ndk_bin="$ndk_directory/toolchains/llvm/prebuilt/linux-x86_64/bin"
+          test -x "$ndk_bin/aarch64-linux-android26-clang"
+          echo "CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER=$ndk_bin/aarch64-linux-android26-clang" >> "$GITHUB_ENV"
+          echo "CC_aarch64_linux_android=$ndk_bin/aarch64-linux-android26-clang" >> "$GITHUB_ENV"
+          echo "AR_aarch64_linux_android=$ndk_bin/llvm-ar" >> "$GITHUB_ENV"
+          echo "CXX_aarch64_linux_android=$ndk_bin/aarch64-linux-android26-clang++" >> "$GITHUB_ENV"
+      - name: Apply reviewed offline-only chapter entry
+        run: python3 ../module-source/chapter-player/apply_player_patch.py .
+      - name: Test local directory containment
+        run: |
+          rustc +nightly-2026-01-01 --edition 2021 --test ../module-source/chapter-player/path_scope.rs -o chapter-path-tests
+          ./chapter-path-tests
+      - name: Test local gameplay planning
+        run: |
+          rustc +nightly-2026-01-01 --edition 2021 --test ../module-source/chapter-player/planner.rs -o chapter-plan-tests
+          ./chapter-plan-tests
+      - name: Cache native dependencies
+        uses: Swatinem/rust-cache@49a0bdc70d2e1b713ca9e2869b211fcce03d3c1c
+        with:
+          workspaces: upstream -> target
+          cache-on-failure: "true"
+      - name: Build native local chapter candidate
+        shell: bash
+        run: |
+          cargo +nightly-2026-01-01 build --locked --release --target aarch64-linux-android -p phira --no-default-features
+          test -f target/aarch64-linux-android/release/libphira.so
+          sha256sum target/aarch64-linux-android/release/libphira.so > BACKEND-SHA256.txt
+      - name: Save unsigned candidate backend only
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: local-chapter-arm64-backend-candidate
+          path: |
+            upstream/target/aarch64-linux-android/release/libphira.so
+            upstream/BACKEND-SHA256.txt
+            upstream/LICENSE
+            module-source/chapter-player/
+          retention-days: 7
+          if-no-files-found: error

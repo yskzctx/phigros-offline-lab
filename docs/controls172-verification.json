@@ -1,0 +1,87 @@
+{
+  "artifact": "Phigros-4.0.1-157-offline-arm64-controls-v172-COMBINED-CANDIDATE.apk",
+  "version_code": 172,
+  "apk_bytes": 3343060101,
+  "sha256": "c780d2765b81578c9f4a1e84a6bd42e6e404213f0c3b959d595f23fe6f189d6f",
+  "signature_verified": true,
+  "alignment_verified": true,
+  "internet_permission": false,
+  "network_state_permission": false,
+  "chapter_process": ":chapter_player",
+  "chapter_backend_sha256": "5ed9ae426a8d54169ff6517587233b8379fabdbcaf2de6006bd79db665ff608c",
+  "chapter_backend_source": "TeamFlos/phira 0.8.2 c830dee5e07a2b8f06104576f30d8045e0859aa7 plus public chapter-player adapter",
+  "chapter_native_build_run": "37760257111",
+  "chapter_formats": [
+    "PGR JSON",
+    "RPE JSON",
+    "PEC",
+    "PBC"
+  ],
+  "custom_record_store": "chapter directory/local-record.json",
+  "autoplay_record_saved": false,
+  "main_game_note_skin_preserved": true,
+  "chapter_selected_note_skin": true,
+  "chapter_target_score_accuracy_rules_wired": true,
+  "planner_tests": 4,
+  "chapter_goal_result": "approximate, constrained by note count and hold completion order",
+  "game_resources_engine_sdk_fix_control_native_and_storage_fix_preserved": true,
+  "device_tested": false,
+  "installed": false,
+  "published": false,
+  "limitations": [
+    "no video backend",
+    "real native activity lifecycle, audio, visuals and return-to-Unity need device tests"
+  ],
+  "miniquad_license_notices_in_apk": true,
+  "source_branch": "release/172-pre.1",
+  "android_source_commit": "e2f1e36",
+  "old_170_171_apk_removed": true,
+  "module_plans_cancelled": true,
+  "independent_phira_plan_cancelled": true,
+  "scope_updated": "2026-10-15",
+  "release_type": "prerelease",
+  "release_date": "2026-10-15",
+  "publication_rechecked": {
+    "skin_import_assertions": 23,
+    "chapter_import_host_test": true,
+    "skin_export_host_test": true,
+    "actual_png_pipeline_host_test": true,
+    "renderer_dispatch_model_test": true,
+    "signature_v2_v3": true,
+    "zipalign_16k": true,
+    "apk_sha256": true,
+    "device_tested": false
+  },
+  "archive_stream_extraction_sha256_verified": true,
+  "archive_extracted_bytes": 3343060101,
+  "public_assets": {
+    "Phigros-offline-172-pre.1.7z.001": {
+      "bytes": 1073741824,
+      "sha256": "8e26b95d82a5d984bd54d903901c1e3ed0cf644431306c83bb95f926195df97d"
+    },
+    "Phigros-offline-172-pre.1.7z.002": {
+      "bytes": 1073741824,
+      "sha256": "1441cb91a5730daf02b99f89ff2479a4819086424362b0e22f4882d2bc8a1369"
+    },
+    "Phigros-offline-172-pre.1.7z.003": {
+      "bytes": 667234259,
+      "sha256": "d266a8c3e7b2f16bda1207dea6ac47a808f2de10fe881aaf819643248ab5b60d"
+    },
+    "INSTALL-172.md": {
+      "bytes": 4511,
+      "sha256": "38f377367437f255a83fdcd744179921f112847fc28b6e8360f5c955401756ca"
+    },
+    "demo-chart-four-notes.pez": {
+      "bytes": 422291,
+      "sha256": "06a2d0af3dfab916354d189a41ee225dd0d84cc8207d33c31b45f24de52d0496"
+    },
+    "demo-note-skin.zip": {
+      "bytes": 2089,
+      "sha256": "2fd465c0dc9dce0bd27e2d8717f7cb6bef7a123e127922a7c3c12362abe25054"
+    },
+    "SHA256SUMS.txt": {
+      "bytes": 697,
+      "sha256": "08fb6742338e106494638b900fd1bf2e4e81b2ddf40d1e4f3b185084f59d0c02"
+    }
+  }
+}

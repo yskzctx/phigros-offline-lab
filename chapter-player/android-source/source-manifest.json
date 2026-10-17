@@ -1,0 +1,39 @@
+{
+  "candidate": 173,
+  "native_build_run": 38999327779,
+  "upstream_commit": "c830dee5e07a2b8f06104576f30d8045e0859aa7",
+  "original_phira_apk_sha256": "b6ee79958c21bc66187b8d8697257617eedd440af5b042a7b8920cc297bef3b0",
+  "java_sources": {
+    "com/phigros/offline/ChapterLibraryActivity.java": "fb2207cab7702f6b2d7c77f660311ce53bcd83f728183b61c07f4ec05f97d007",
+    "com/phigros/offline/ChapterPack.java": "96241a32781a52922169f157d48f961f04fe7fe036f9a9fc96a345cc5de5530d",
+    "com/phigros/offline/ChapterPlayerActivity.java": "53556cc857759122f2d378b050631f7e486a7e88aea36b52efb6f74f5741d5ae",
+    "com/phigros/offline/ChapterProcess.java": "7c3f692a30eb4189bd021239cb0affe833b4ffb54f649bd5e3cffb30e2a95ab3",
+    "com/phigros/offline/ChapterSkinExport.java": "ec11630e79f3d081faa38d10eb7a2ad9a0c0473ec85166c38272cd9846567cda",
+    "com/phigros/offline/ControlsConfig.java": "f13fa81b99062d6977dae22a2424b4f08b644884899bba8688321ac84106a500",
+    "com/phigros/offline/LaunchActivity.java": "8a89c5d5244d3dd69af06fbf0dd4fcddf0730659fe6fdb599df9696926cbc0f3",
+    "com/phigros/offline/NativeControls.java": "620d77a2733485f58613ca947ca222310044f1f862ff905332d7b85cf70e4413",
+    "com/phigros/offline/OfflineApplication.java": "c6a5f04573b5ab829cd8a995ce66ab28b442dab76574eceef5bc234f0e7aa4d8",
+    "com/phigros/offline/OfflineAssets.java": "75aa3d395a4bf6951db20ead980881426ffa9f64fa3dbcc195d55e73bdbba19e",
+    "com/phigros/offline/OfflineHttp.java": "135a2d9004e5573fff2654e03fe9e9d3c3e6c66d2d3d531eef9196f972c01070",
+    "com/phigros/offline/OverlayMenu.java": "648d94716bab6b77905c373fa09cdc0a6af8dee831d2352454ec5f2bb7c5385f",
+    "com/phigros/offline/RksEditor.java": "fbc0d43d5e5e60e2e95d34afe23a37ea24c6ad3a5bd04c26788d4994a04d6d68",
+    "com/phigros/offline/RksPlanner.java": "9fc1c8d90c8361156c4f6b23d3bc8d2feecc09948ea63edf19124fec2655b075",
+    "com/phigros/offline/SkinActivity.java": "23a5b842940b6d73ad5b5dc79654ca2f7637f4371d94ddbdf3e2d764446f0ef1",
+    "com/phigros/offline/SkinController.java": "5cf5f682d332aaf1fab48f29b4eb4e4ce2a2a1d0ddaa7386d3be861ec266bfeb",
+    "com/phigros/offline/SkinPack.java": "7b7ab1a32cbd393e0b0afdd9ead454d0a0eeb696325407cecec3d4fe256475cc",
+    "quad_native/QuadNative.java": "120a65237f885ab3636542c2d8026eaad1ec646c555f2faead952995d5969389"
+  },
+  "device_tested": false,
+  "native_sources": {
+    "native/controls-plan.h": "99e9c55cf88526c2f09f1ba98b4abc9243ae971c16fa862168cacf4d2f7333da",
+    "native/expected-hooks.h": "ecd1dc33380640a5029cf92e3dcf4804888fd19fafbe25478ca170be0bf70465",
+    "native/native-hook-impl.h": "36a1bfaff2688b533cc72c710319afbd751c799e7fa49382d843f1e98f779b5d",
+    "native/offline.c": "e9de861cd56d97565e11af4939921162548a0ee636be7802af2ea5fedfab731f",
+    "native/privacy-hooks.h": "eddcbfdbd783f30c763247106768d3d001d2b19958b9f70c05791803a01abc6b",
+    "native/privacy.c": "bb4dc494a6e0399fba3765e98eefa06bbc3f7eb7a7e3b8a651d82b38cc357445",
+    "native/skin-hooks.h": "ffbd8e0b2e926aa958357c6721582523dafa9e3a8ba68fc03dddfee51e6197e6",
+    "native/skins.c": "88eb4548b24768955b281f69c107960a6f4162e8ceb7f753ff3c04e84a823b87"
+  },
+  "controls_ui_sha256": "cf5dc161fa3e0d295aae00d5a1224e0765131fe999d6a262e262fa84cf657903",
+  "text_line_endings": "LF; source text matches compiled inputs, line endings normalized"
+}

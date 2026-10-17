@@ -1,0 +1,76 @@
+{
+  "release": "https://github.com/yskzctx/phigros-offline-lab/releases/tag/v173",
+  "release_id": 415584493,
+  "tag": "v173",
+  "source_commit": "5a73aed4479c4fc49f7d40ca7ab5026cc86d147d",
+  "draft": false,
+  "prerelease": false,
+  "latest": true,
+  "published_at": "2026-10-17T04:41:09Z",
+  "release_channel_requested_by_user": "formal",
+  "device_tested": false,
+  "installed": false,
+  "remote_asset_sha256_and_sizes_verified": true,
+  "archive_stream_extraction_verified": true,
+  "public_downloads": [
+    {
+      "name": "CHANGES-173.md",
+      "anonymous_download": true,
+      "method": "GET full SHA256"
+    },
+    {
+      "name": "INSTALL-173.md",
+      "anonymous_download": true,
+      "method": "GET full SHA256"
+    },
+    {
+      "name": "Phigros-offline-v173.7z.001",
+      "anonymous_download": true,
+      "method": "HEAD size and GET first 64KiB"
+    },
+    {
+      "name": "Phigros-offline-v173.7z.002",
+      "anonymous_download": true,
+      "method": "HEAD size and GET first 64KiB"
+    },
+    {
+      "name": "Phigros-offline-v173.7z.003",
+      "anonymous_download": true,
+      "method": "HEAD size and GET first 64KiB"
+    },
+    {
+      "name": "SHA256SUMS.txt",
+      "anonymous_download": true,
+      "method": "GET full SHA256"
+    }
+  ],
+  "assets": {
+    "Phigros-offline-v173.7z.001": {
+      "bytes": 1073741824,
+      "sha256": "f0c15ffad998951d51597f1ffde44aa1a15d773ec6a54efcd6e60ec695643708"
+    },
+    "Phigros-offline-v173.7z.002": {
+      "bytes": 1073741824,
+      "sha256": "d7808ca9a9b612e76c684852b19c127ab418c32246689c27a946f45a76682a65"
+    },
+    "Phigros-offline-v173.7z.003": {
+      "bytes": 667241285,
+      "sha256": "636abea5dc718ad2b79d8b1b7df27d421a032c97e6eb6aebe3059b576eac8cfe"
+    },
+    "INSTALL-173.md": {
+      "bytes": 4201,
+      "sha256": "d10e991a9789e1025565473c2153bdecc887a05b2ce789c6637fb71874ea9e88"
+    },
+    "CHANGES-173.md": {
+      "bytes": 3409,
+      "sha256": "78a608cda8a0599a1624701e98c14b22d8ebce2d3eae48ed45078d448f88e753"
+    },
+    "SHA256SUMS.txt": {
+      "bytes": 541,
+      "sha256": "3cd8b602f2dd811c7e77dd8f109982584e1807a0c4977c51cd51de0a9d3b943c"
+    }
+  },
+  "temporary_relay_deleted": true,
+  "temporary_relay_assets_removed": 43,
+  "local_duplicate_volume_bytes_removed": 2814724933
+}

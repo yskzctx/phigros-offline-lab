@@ -1,11 +1,24 @@
 # Phigros 离线共存测试项目
 
-**可选测试：172 预发行版（待真机验证）** — [下载与发布说明](https://github.com/yskzctx/phigros-offline-lab/releases/tag/v172-pre.1) · [安装与测试步骤](https://github.com/yskzctx/phigros-offline-lab/blob/v172-pre.1/docs/INSTALL-172.md)。自制章节、谱面导入、音符皮肤及原有控制合并为一个 APK。两个 LSPosed 模块及面向 Phira 原版的独立开发计划已于 2026-10-15 取消。167 继续作为正式版。
+**当前正式发行版：173** · [发布与下载](https://github.com/yskzctx/phigros-offline-lab/releases/tag/v173) · [安装说明](docs/INSTALL-173.md) · [173 更新记录](CHANGELOG-173.md)。新增 Perfect、Good 随机早晚 / Early / Late 和改进的目标预估；保留自制章节、谱面导入、音符皮肤与单份资源储存。
+
+**173 已通过电脑端检查，尚未真机验收。** 本次按项目所有者要求发布到正式发行渠道，不代表所有设备与谱面均已实测。
+
+## 173 下载与安装
+
+从 [v173 正式发行页](https://github.com/yskzctx/phigros-offline-lab/releases/tag/v173) 下载全部三个 `Phigros-offline-v173.7z.001/.002/.003` 和 `SHA256SUMS.txt`，放在同一目录，用 7-Zip 打开 `.001`，解压出 **一个** `Phigros-offline-v173.apk`，无密码。三个分卷均需下载，分卷不能直接安装。签名与 172 一致，先备份修改版数据再覆盖安装，不要卸载或清除数据。
+
+对应完整控制与内置章节适配源码见 [v173 标签](https://github.com/yskzctx/phigros-offline-lab/tree/v173)，重点目录为 `chapter-player/` 和 `chapter-player/android-source/`；这些源码也已合入主分支。根目录 `src/` 保留的是旧版快照，173 请使用上述目录。主分支下方旧版本功能及真机记录是历史资料。
+
+## 历史版本与验证记录
 
 
-基于 Phigros 4.0.1（157）的非官方 arm64 本地测试修改版。当前版本为 **167 正式版：仅修复资源重复储存**。
+**可选测试：172 预发行版（待真机验证）** — [下载与发布说明](https://github.com/yskzctx/phigros-offline-lab/releases/tag/v172-pre.1) · [安装与测试步骤](https://github.com/yskzctx/phigros-offline-lab/blob/v172-pre.1/docs/INSTALL-172.md)。自制章节、谱面导入、音符皮肤及原有控制合并为一个 APK。两个 LSPosed 模块及面向 Phira 原版的独立开发计划已于 2026-10-15 取消。167 保留为历史发行版。
 
-## 下载与安装
+
+基于 Phigros 4.0.1（157）的非官方 arm64 本地测试修改版。167 是此前的正式版本，其储存修复及真机记录保留在下文。
+
+## 历史版本下载与安装
 
 [进入 Releases](https://github.com/yskzctx/phigros-offline-lab/releases)。下载同一版本的全部 `Phigros-offline-167.7z.00*` 分卷及 `SHA256SUMS.txt`，放在同一文件夹，用 7-Zip 打开 `.7z.001` 解压得到 APK。分卷不是 APK。校验文件同时记录分卷和解压后的 APK 的 SHA-256。Git 历史不存放大型 APK。
 
