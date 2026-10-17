@@ -10,10 +10,10 @@
                     continue;
                 }
                 if !matches!(note.judge,JudgeStatus::NotJudged){continue;}
-                if note.time>t{break;}
-                let delay=match desired{1=>LIMIT_BAD+0.001,2=>(LIMIT_PERFECT+LIMIT_GOOD)*0.5,3=>(LIMIT_GOOD+LIMIT_BAD)*0.5,_=>0.};
+                if note.time>t+LIMIT_GOOD*spd{break;}
+                let delay=match desired{1=>LIMIT_BAD+0.001,2|5=>(LIMIT_PERFECT+LIMIT_GOOD)*0.5,4=>-(LIMIT_PERFECT+LIMIT_GOOD)*0.5,3=>(LIMIT_GOOD+LIMIT_BAD)*0.5,_=>0.};
                 if t<note.time+delay*spd{continue;}
-                if matches!(note.kind,NoteKind::Hold{..})&&(desired==0||desired==2){
+                if matches!(note.kind,NoteKind::Hold{..})&&matches!(desired,0|2|4|5){
                     note.hitsound.play(res);let perfect=desired==0;
                     self.judgements.borrow_mut().push((t,line_id as u32,*id,Err(perfect)));
                     note.judge=JudgeStatus::Hold(perfect,t,delay,false,f64::INFINITY);
@@ -33,14 +33,14 @@
             at(a).total_cmp(&at(b)).then(a.0.cmp(&b.0)).then(a.1.cmp(&b.1))
         });
         for(line_id,id,desired)in events{
-            let judgement=match desired{1=>Judgement::Miss,2=>Judgement::Good,3=>Judgement::Bad,_=>Judgement::Perfect};
-            let diff=match desired{1=>LIMIT_BAD+0.001,2=>(LIMIT_PERFECT+LIMIT_GOOD)*0.5,3=>(LIMIT_GOOD+LIMIT_BAD)*0.5,_=>0.};
+            let judgement=match desired{1=>Judgement::Miss,2|4|5=>Judgement::Good,3=>Judgement::Bad,_=>Judgement::Perfect};
+            let diff=match desired{1=>LIMIT_BAD+0.001,2|5=>(LIMIT_PERFECT+LIMIT_GOOD)*0.5,4=>-(LIMIT_PERFECT+LIMIT_GOOD)*0.5,3=>(LIMIT_GOOD+LIMIT_BAD)*0.5,_=>0.};
             self.commit(t,judgement,line_id as u32,id,diff);
             let line=&mut chart.lines[line_id];let note=&mut line.notes[id as usize];
             line.object.set_time(t);note.object.set_time(t);
             let line=&chart.lines[line_id];let note=&line.notes[id as usize];let transform=line.now_transform(res,&chart.lines);
-            if desired==0||desired==2{
-                let color=if desired==2{res.res_pack.info.fx_good()}else{res.res_pack.info.fx_perfect()};
+            if matches!(desired,0|2|4|5){
+                let color=if desired==0{res.res_pack.info.fx_perfect()}else{res.res_pack.info.fx_good()};
                 res.with_model(transform*note.object.now(res),|res|res.emit_at_origin(note.rotation(line),note.fx_color.unwrap_or(color)));
                 if !matches!(note.kind,NoteKind::Hold{..}){note.hitsound.play(res);}
             }else if desired==3&&!matches!(note.kind,NoteKind::Hold{..}){
