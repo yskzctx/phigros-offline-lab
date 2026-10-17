@@ -1,0 +1,27 @@
+{
+  "version_code": 173,
+  "artifact": "Phigros-4.0.1-157-offline-arm64-controls-v173-COMBINED-CANDIDATE.apk",
+  "sha256": "8cb9d67924a1b3ac0ffb74ee3409f6dc28709dcb19a94f033cd30b0d5901698b",
+  "apk_bytes": 3343068293,
+  "signature_verified": true,
+  "alignment_verified": true,
+  "internet_permission": false,
+  "resource_entries_preserved": true,
+  "perfect_rules": true,
+  "good_early_late_rules": true,
+  "goals_mix_good_timing": true,
+  "synthetic_drag_flick_good_preserved": true,
+  "good_weight": 0.65,
+  "timing_aware_estimate": true,
+  "actual_result_readback": true,
+  "chapter_backend_sha256": "9915a70cd55a85d3149046f33ba658a7bd16979dca5d19d3c3d60c4f38154873",
+  "chapter_build_run": 38999327779,
+  "device_tested": false,
+  "installed": false,
+  "published": false,
+  "limitations": [
+    "Predictions model judgment times; frame ordering, special chart logic and active mode may still affect actual results.",
+    "658000 result not diagnosed without its actual counts and longest combo.",
+    "Not a device-tested formal release."
+  ]
+}

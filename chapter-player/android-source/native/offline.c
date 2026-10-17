@@ -29,12 +29,17 @@ static ControlConfig pending_config={.target=1000000,.accuracy=10000};
 static ControlConfig chart_config;
 static atomic_int status_total,status_planned,status_hit;
 static atomic_int status_score,status_accuracy,status_miss,status_good,status_bad;
+static atomic_int status_final,status_actual_score,status_actual_accuracy;
+static atomic_int status_actual_perfect,status_actual_good,status_actual_bad,status_actual_miss,status_actual_combo;
+static atomic_int status_actual_early,status_actual_late;
 static atomic_uint config_revision=1;
 static void *plan_score,*plan_list;
 static int plan_size,plan_last_count=-1;
 static unsigned char selected[MAX_NOTES+1],consumed[MAX_NOTES+1];
 static unsigned char note_types[MAX_NOTES+1];
+static PlanTiming note_timing[MAX_NOTES+1];
 static uint32_t chart_seed=0x179af31bu;
+static uint32_t chart_plan_seed;
 static uintptr_t image;
 typedef bool (*judge_fn)(void *,const void *);
 typedef void (*record_fn)(void *,void *,void *,void *,const void *);
@@ -77,8 +82,19 @@ static int ordinal(void *score,float code) {
             void *note=pointer(array,0x20+(size_t)k*sizeof(void *));
             int type=note?*integer(note,0x10):0;
             note_types[k+1]=(unsigned char)(type>=1&&type<=4?type:0);
+            float start=note?*number(note,0x2c):0.f;
+            note_timing[k+1]=(PlanTiming){start,start+(type==3?*number(note,0x1c):0.f)};
         }
-        int planned=make_profile_typed(&chart_config,n,plan_random(&chart_seed),selected,&predicted,note_types);
+        float good_delay=0.13f,miss_delay=0.18f;
+        void *progress=pointer(score,0x90),*judge=progress?pointer(progress,0x30):NULL;
+        void *klass=judge?pointer(judge,0):NULL,*fields=klass?pointer(klass,0xb8):NULL;
+        if(fields){float p=*number(fields,4),g=*number(fields,8);if(p>0.f&&g>p&&g<1.f){good_delay=(p+g)*0.5f;miss_delay=g;}}
+        chart_plan_seed=plan_random(&chart_seed);if(!chart_plan_seed)chart_plan_seed=1;
+        PlanTimeline timeline=plan_timeline_seed(note_timing,note_types,n,good_delay,miss_delay,chart_plan_seed);
+        timeline.challenge=fields&&*byte(fields,0);
+        timeline.denominator=*integer(level,0x2c)>0?*integer(level,0x2c):n;
+        int planned=make_profile_timed(&chart_config,n,chart_plan_seed,selected,&predicted,note_types,&timeline);
+        free(timeline.events);atomic_store(&status_final,0);
         atomic_store(&status_total,n);atomic_store(&status_planned,planned);atomic_store(&status_hit,0);
         atomic_store(&status_score,predicted.score);atomic_store(&status_accuracy,predicted.accuracy);
         atomic_store(&status_miss,predicted.miss);atomic_store(&status_good,predicted.good);atomic_store(&status_bad,predicted.bad);
@@ -102,7 +118,7 @@ static void miss(void *score,float code,const void *method) {
     miss_original(score,code,method);
 }
 static void good(void *score,float code,float time,Vec3 position,bool is_hold,const void *method) {
-    if(atomic_load(&ready)&&atomic_load(&enabled)&&score)mark_hit(ordinal(score,code),2);
+    if(atomic_load(&ready)&&atomic_load(&enabled)&&score){int i=ordinal(score,code);if(i&&plan_is_good(selected[i]))mark_hit(i,selected[i]);}
     good_call(score,code,time,position,is_hold,method);
 }
 static void perfect(void *score,float code,float time,Vec3 position,bool is_hold,const void *method) {
@@ -114,8 +130,8 @@ static void perfect(void *score,float code,float time,Vec3 position,bool is_hold
         int judgment=selected[i];mark_hit(i,judgment);
         if(judgment==1) {
             miss_original(score,code,NULL);
-        } else if(judgment==2) {
-            good_call(score,code,0.08f,position,is_hold,NULL);
+        } else if(plan_is_good(judgment)) {
+            good_call(score,code,plan_good_early(judgment,i,chart_plan_seed)?-0.13f:0.13f,position,is_hold,NULL);
         } else {
             bad_call(score,code,0.15f,NULL);
         }
@@ -126,6 +142,14 @@ static void perfect(void *score,float code,float time,Vec3 position,bool is_hold
 static void *result(void *score,const void *method) {
     void *out=result_original(score,method);
     if(out && score==plan_score && atomic_load(&enabled) && atomic_load(&ready)) {
+        // Read the game's real result. Never replace its score or judgments.
+        atomic_store(&status_actual_score,*integer(out,0x10));
+        atomic_store(&status_actual_accuracy,(int)(*number(out,0x18)*100.f+0.5f));
+        atomic_store(&status_actual_perfect,*integer(out,0x1c));atomic_store(&status_actual_good,*integer(out,0x20));
+        atomic_store(&status_actual_bad,*integer(out,0x24));atomic_store(&status_actual_miss,*integer(out,0x28));
+        atomic_store(&status_actual_combo,*integer(out,0x34));
+        atomic_store(&status_actual_early,*integer(out,0x2c));atomic_store(&status_actual_late,*integer(out,0x30));
+        atomic_store(&status_final,1);
         __android_log_print(ANDROID_LOG_INFO,"PhigrosOffline","control.result score=%d percent=%.4f P=%d G=%d B=%d M=%d planned=%d executed=%d",*integer(out,0x10),*number(out,0x18),*integer(out,0x1c),*integer(out,0x20),*integer(out,0x24),*integer(out,0x28),atomic_load(&status_planned),atomic_load(&status_hit));
         plan_score=NULL;
     }
@@ -141,17 +165,16 @@ static bool automatic(void *self, const void *method, judge_fn original, int typ
     // Paused / blocked story transitions must keep their original logic.
     if ((judge && *byte(judge,0x88)) || !*byte(progress,0x8a)) return false;
     float time=*number(progress,0x90), due=*number(note,0x2c);
-    if (time < due) return false;
     void *score=pointer(self,0x20);
     int i=score?ordinal(score,*number(note,0x38)):0;
     // A planned Miss must visibly follow the game's unhit-note timeout path.
     // Do not set synthetic input, isJudged, flick or hold grace flags for it.
-    if(i && selected[i]==1)return original(self,method);
+    if(i && selected[i]==1)return time<due?false:original(self,method);
     bool starting=type!=3 || !*byte(self,0x8e);
     // Tap/Hold can naturally enter Good. Delay their initial synthetic contact;
     // keep Drag/Flick's original timing and forced rule semantics unchanged.
     float head_time=due;
-    if(starting&&i&&selected[i]==2&&(type==0||type==3)){
+    if(starting&&i&&plan_is_good(selected[i])&&(type==0||type==3)){
         float delay=0.13f;
         // HoldControl.Judge (157) reads JudgeControl static_fields at class+0xb8,
         // PerfectTimeRange+4 and GoodTimeRange+8. The midpoint avoids float
@@ -159,7 +182,7 @@ static bool automatic(void *self, const void *method, judge_fn original, int typ
         void *klass=judge?pointer(judge,0):NULL;
         void *fields=klass?pointer(klass,0xb8):NULL;
         if(fields){float p=*number(fields,4),g=*number(fields,8);if(p>0.f&&g>p&&g<1.f)delay=(p+g)*0.5f;}
-        head_time+=delay;
+        head_time+=plan_good_early(selected[i],i,chart_plan_seed)?-delay:delay;
     }
     if(starting&&time<head_time)return false;
     if (type==0 || type==3) *byte(note,0x28)=1;
@@ -272,7 +295,7 @@ JNIEXPORT jboolean JNICALL Java_com_phigros_offline_NativeControls_configure(JNI
         if(cursor+(typed?7:6)>length)return JNI_FALSE;
         NoteRule *r=&c.rules[i];r->judgment=packed[cursor++];r->position=packed[cursor++];r->start=packed[cursor++];r->end=packed[cursor++];r->count=packed[cursor++];if(typed)r->note_type=packed[cursor++];r->length=packed[cursor++];
         if(r->note_type<0||r->note_type>4)return JNI_FALSE;
-        if(r->judgment<1||r->judgment>3||r->position<1||r->position>6||r->start<1||r->start>MAX_NOTES||r->end<1||r->end>MAX_NOTES||r->count<1||r->count>MAX_NOTES||r->length<0||r->length>MAX_INDICES||cursor+r->length>length||(r->position==2&&r->end<r->start)||(r->position==3&&r->length==0))return JNI_FALSE;
+        if(r->judgment<0||r->judgment>5||r->position<1||r->position>6||r->start<1||r->start>MAX_NOTES||r->end<1||r->end>MAX_NOTES||r->count<1||r->count>MAX_NOTES||r->length<0||r->length>MAX_INDICES||cursor+r->length>length||(r->position==2&&r->end<r->start)||(r->position==3&&r->length==0))return JNI_FALSE;
         for(int k=0;k<r->length;k++){int v=packed[cursor++];if(v<1||v>MAX_NOTES)return JNI_FALSE;r->indices[k]=v;}
     }
     if(cursor!=length)return JNI_FALSE;
@@ -281,9 +304,9 @@ JNIEXPORT jboolean JNICALL Java_com_phigros_offline_NativeControls_configure(JNI
 }
 JNIEXPORT jintArray JNICALL Java_com_phigros_offline_NativeControls_status(JNIEnv *env,jclass cls) {
     (void)cls;
-    jint values[]={atomic_load(&ready),atomic_load(&enabled),atomic_load(&status_total),atomic_load(&status_planned),atomic_load(&status_hit),(jint)atomic_load(&config_revision),atomic_load(&status_score),atomic_load(&status_accuracy),atomic_load(&status_miss),atomic_load(&status_good),atomic_load(&status_bad)};
-    jintArray out=(*env)->NewIntArray(env,11);
-    if(out)(*env)->SetIntArrayRegion(env,out,0,11,values);return out;
+    jint values[]={atomic_load(&ready),atomic_load(&enabled),atomic_load(&status_total),atomic_load(&status_planned),atomic_load(&status_hit),(jint)atomic_load(&config_revision),atomic_load(&status_score),atomic_load(&status_accuracy),atomic_load(&status_miss),atomic_load(&status_good),atomic_load(&status_bad),atomic_load(&status_final),atomic_load(&status_actual_score),atomic_load(&status_actual_accuracy),atomic_load(&status_actual_perfect),atomic_load(&status_actual_good),atomic_load(&status_actual_bad),atomic_load(&status_actual_miss),atomic_load(&status_actual_combo),atomic_load(&status_actual_early),atomic_load(&status_actual_late)};
+    jintArray out=(*env)->NewIntArray(env,21);
+    if(out)(*env)->SetIntArrayRegion(env,out,0,21,values);return out;
 }
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm,void *reserved) {
     (void)vm;(void)reserved;

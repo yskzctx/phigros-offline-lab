@@ -1,7 +1,7 @@
-# Android integration source for local candidate 172
+# Android integration source for local candidate 173
 
 This directory contains the exact Android Java, menu HTML and native skin/control
-sources used for the local 172 integration candidate. `source-manifest.json`
+sources used for the local 173 integration candidate. `source-manifest.json`
 records their hashes and the pinned native build. It is development source,
 not a new stable release or evidence of successful Android gameplay.
 
@@ -32,3 +32,5 @@ Device lifecycle, music, touch, chart formats, chosen skin rendering and
 returning to Unity still require real-device testing. The target is an
 approximate score/accuracy constrained by chart granularity and explicit rules;
 judgment counts generate the result instead of overwriting the final score.
+
+173 adds explicit Perfect protection, Good Early/Late/random rules, seeded mixed Good timing for goals, timing-aware combo estimates and real result readback. Tap/Hold use the actual active judgment windows; synthetic Drag/Flick Good remains supported. The ordinary and challenge scoring branches are modeled separately.

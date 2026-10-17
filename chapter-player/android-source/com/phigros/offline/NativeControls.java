@@ -22,5 +22,5 @@ public final class NativeControls {
         apply(c);
         if(!preferences(context).edit().putInt("goal_mode",c.mode).putString("score",Integer.toString(c.target)).putString("accuracy",new java.math.BigDecimal(c.accuracy).divide(new java.math.BigDecimal(100)).toPlainString()).putString("rules",c.encodedRules).commit())throw new IllegalStateException("配置保存失败");
     }
-    public static int[] getStatus() {return LaunchActivity.isNativeLoaded()?status():new int[11];}
+    public static int[] getStatus() {return LaunchActivity.isNativeLoaded()?status():new int[21];}
 }

@@ -43,7 +43,7 @@ public final class ControlsConfig {
         if(!text.trim().isEmpty())for(String row:text.trim().split(";",-1)){
             String[] p=row.split(":",-1);if(p.length!=6&&p.length!=7)throw new IllegalArgumentException("规则格式损坏");
             int type=p.length==7?bounded(p[6],0,4,"按键种类"):0;
-            int j=bounded(p[0],1,3,"判定类型"),pos=bounded(p[1],1,6,"位置类型"),s=bounded(p[2],1,20000,"起始音符"),e=bounded(p[3],1,20000,"结束音符"),k=bounded(p[4],1,20000,"数量");
+            int j=bounded(p[0],0,5,"判定类型"),pos=bounded(p[1],1,6,"位置类型"),s=bounded(p[2],1,20000,"起始音符"),e=bounded(p[3],1,20000,"结束音符"),k=bounded(p[4],1,20000,"数量");
             if(pos==2&&e<s)throw new IllegalArgumentException("范围结束不能小于起始");
             LinkedHashSet<Integer> values=new LinkedHashSet<Integer>();
             if(p[5].length()>12000)throw new IllegalArgumentException("编号列表过长");

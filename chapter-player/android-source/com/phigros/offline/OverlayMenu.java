@@ -80,6 +80,9 @@ public final class OverlayMenu {
         JSONArray rules=new JSONArray();for(ControlsConfig.Rule r:c.rules){JSONObject o=new JSONObject();o.put("judgment",r.judgment);o.put("position",r.position);o.put("noteType",r.noteType);o.put("start",Integer.toString(r.start));o.put("end",Integer.toString(r.end));o.put("count",Integer.toString(r.count));StringBuilder ids=new StringBuilder();for(int id:r.indices){if(ids.length()>0)ids.append(',');ids.append(id);}o.put("indices",ids.toString());rules.put(o);}state.put("rules",rules);
         int[] s=NativeControls.getStatus();String runtime=LaunchActivity.isNativeLoaded()?(s[0]==1?"控制就绪 · 设置在下一局使用":"控制准备中，请在选曲页开启后再进入谱面"):"在选曲页开启自动游玩；保存设置后下一局生效。";
         if(s[2]>0)runtime="本局计划 "+s[3]+" 个，已执行 "+s[4]+" 个；预测 "+s[6]+" 分 / "+String.format(Locale.ROOT,"%.2f",s[7]/100.0)+"% · Miss "+s[8]+" / Good "+s[9]+" / Bad "+s[10];
+        if(s.length>=14&&s[11]==1)runtime+="；实际结算 "+s[12]+" 分 / "+String.format(Locale.ROOT,"%.2f",s[13]/100.0)+"%（差 "+(s[12]-s[6])+" 分 / "+String.format(Locale.ROOT,"%+.2f",(s[13]-s[7])/100.0)+" 个百分点）";
+        if(s.length>=19&&s[11]==1)runtime+="；实际 P "+s[14]+" / G "+s[15]+" / B "+s[16]+" / M "+s[17]+"；最长连击 "+s[18]+" / "+s[2];
+        if(s.length>=21&&s[11]==1)runtime+="；Early "+s[19]+" / Late "+s[20];
         state.put("runtime",runtime);state.put("rksTarget",prefs.getString("rks_target",""));String history=prefs.getString("rks_status","");
         if(prefs.getBoolean("all_ap_pending",false))history="等待冷启动：恢复全部 AP";else if(prefs.getBoolean("rks_restore",false))history="等待冷启动：恢复上次历史备份";else if(prefs.getBoolean("rks_pending",false))history="等待冷启动：目标 RKS "+prefs.getString("rks_target","");state.put("history",history);if(message!=null)state.put("message",message);
         web.evaluateJavascript("window.receive("+state.toString()+")",null);

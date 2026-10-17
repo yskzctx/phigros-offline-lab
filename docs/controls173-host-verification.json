@@ -1,0 +1,53 @@
+{
+  "host_regressions": [
+    {
+      "test": "goals173_test",
+      "result": "PASS: synthetic Drag/Flick Good preserved, Perfect precedence, audited Good 0.65"
+    },
+    {
+      "test": "timing173_test",
+      "result": "PASS: hold-tail and delayed Good/Miss chronology instead of start order"
+    },
+    {
+      "test": "goal_rules173_test",
+      "result": "PASS natural score/accuracy planning, rule priority, small/large charts, explicit constraints"
+    },
+    {
+      "test": "note_type173_test",
+      "result": "PASS: note type filters, eligible random counts, global numbering, overlapping priority, empty type and legacy all"
+    },
+    {
+      "test": "native_goals173_test",
+      "result": "PASS: actual dispatch/readback, Good on all four types, all-Good 685000, timing-aware score/accuracy, Perfect protection"
+    },
+    {
+      "test": "good_timing173_test",
+      "result": "PASS: Early before due, Late after due, active Good window, Hold state, restored clock and mixed timing"
+    },
+    {
+      "test": "hold_good173_test",
+      "result": "PASS: Hold Good head state and real clock restoration"
+    },
+    {
+      "test": "ControlsPerfect173Test",
+      "result": "PASS: Perfect in all position/type combinations and bounds"
+    },
+    {
+      "test": "ControlsNoteTypeTest",
+      "result": "PASS: five note filters, old configuration compatibility, active targets and invalid type rejection"
+    },
+    {
+      "test": "ControlsRulesTest",
+      "result": "PASS rule list validation, decimal accuracy, duplicate notes, JNI encoding"
+    }
+  ],
+  "host_test_count": 10,
+  "same_signer_as_172": true,
+  "chapter_ci_run": 38999327779,
+  "chapter_ci_commit": "8d6f56ebefc6983d81c028dc6e52885f099489d8",
+  "chapter_planner_tests": 8,
+  "chapter_ci_status": "success",
+  "browser_ui_test": "Perfect, Good Early/Late/random and accuracy-only save passed in Edge with 360x520 viewport",
+  "source_snapshot_hashes_verified": true,
+  "device_tested": false
+}
