@@ -172,7 +172,7 @@ class QuadSurface
 
 public class ChapterPlayerActivity extends Activity {
     
-    private static native boolean configureChapter(String request);
+    private static native boolean configureChapter(String request)throws java.io.IOException;
     private boolean nativeReady;
     public void finishChapter(){runOnUiThread(new Runnable(){public void run(){finish();}});}
     public void chooseFile(){} // No file/account entry inside gameplay; picker lives in chapter library.

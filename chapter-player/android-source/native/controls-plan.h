@@ -26,7 +26,7 @@ static inline int compare_events(const void *aa,const void *bb){
     if(a->note!=b->note)return a->note<b->note?-1:1;
     return a->judgment-b->judgment;
 }
-static inline PlanTimeline plan_timeline_seed(const PlanTiming *times,const unsigned char *types,int n,float good_delay,float miss_delay,uint32_t seed){
+static inline PlanTimeline plan_timeline_windows(const PlanTiming *times,const unsigned char *types,int n,float good_delay,float miss_delay,float bad_delay,uint32_t seed){
     PlanTimeline t={0};if(!times||n<1||n>MAX_NOTES)return t;
     t.events=malloc((size_t)n*6*sizeof(PlanEvent));if(!t.events)return t;
     for(int i=1;i<=n;i++){
@@ -34,6 +34,7 @@ static inline PlanTimeline plan_timeline_seed(const PlanTiming *times,const unsi
         int hold=types&&types[i]==3;
         for(int j=0;j<6;j++){
             float at=hold?fmaxf(times[i].start,times[i].end-0.22f):times[i].start;
+            if(j==3)at=times[i].start-bad_delay;
             // 157: Drag expires after 0.10s; Flick after 1.75 * Perfect.
             // Tap/Hold use the active Good threshold. These are not one delay.
             if(j==1){float delay=miss_delay;if(types&&types[i]==2)delay=0.10f;if(types&&types[i]==4)delay=1.75f*(2.f*good_delay-miss_delay);at=times[i].start+delay;}
@@ -46,6 +47,7 @@ static inline PlanTimeline plan_timeline_seed(const PlanTiming *times,const unsi
     }
     qsort(t.events,(size_t)t.length,sizeof(PlanEvent),compare_events);return t;
 }
+static inline PlanTimeline plan_timeline_seed(const PlanTiming *times,const unsigned char *types,int n,float good_delay,float miss_delay,uint32_t seed){return plan_timeline_windows(times,types,n,good_delay,miss_delay,(miss_delay+.22f)*.5f,seed);}
 static inline PlanTimeline plan_timeline(const PlanTiming *times,const unsigned char *types,int n,float good_delay,float miss_delay){return plan_timeline_seed(times,types,n,good_delay,miss_delay,0);}
 static inline uint32_t plan_random(uint32_t *s){*s^=*s<<13;*s^=*s>>17;*s^=*s<<5;return *s;}
 static inline void estimate_plan(const unsigned char *plan,int n,PlanEstimate *e){

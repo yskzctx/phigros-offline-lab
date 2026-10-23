@@ -26,23 +26,36 @@ pub struct ChapterControlRequest {pub mode:i32,pub target:i32,pub accuracy:i32,p
 static REQUEST: Lazy<Mutex<Option<ChapterRequest>>> = Lazy::new(|| Mutex::new(None));
 
 fn validate(request: &ChapterRequest) -> Result<(PathBuf, PathBuf)> {
-    let root=std::fs::canonicalize(&request.data_root).context("chapter root missing")?;
-    let path=path_scope::owned_chart(&root,Path::new(&request.directory)).context("chart directory outside local chapter root")?;
+    let root=std::fs::canonicalize(&request.data_root).context("章节目录不存在或无法读取")?;
+    let path=path_scope::owned_chart(&root,Path::new(&request.directory)).context("谱包目录不存在、不可读取或超出章节目录")?;
     if let Some(skin)=request.skin_directory.as_ref(){
         let skin_root=root.parent().context("chapter parent missing")?.join("offline-chapter-skins");
-        path_scope::owned_chart(&skin_root,Path::new(skin)).context("skin outside private chapter skin root")?;
+        path_scope::owned_chart(&skin_root,Path::new(skin)).context("皮肤目录不存在或超出独立皮肤目录")?;
     }
-    if let Some(c)=request.controls.as_ref(){prpr::chapter_controls::planner::Controls::parse(c.mode,c.target,c.accuracy,&c.rules).map_err(anyhow::Error::msg)?;}
+    if request.autoplay {if let Some(c)=request.controls.as_ref(){prpr::chapter_controls::planner::Controls::parse(c.mode,c.target,c.accuracy,&c.rules).map_err(anyhow::Error::msg).context("自动游玩判定配置无效")?;}}
     Ok((root,path))
 }
 
 #[cfg(target_os="android")]
 #[no_mangle]
-pub extern "C" fn Java_com_phigros_offline_ChapterPlayerActivity_configureChapter(_env: EnvUnowned,_class:JClass,request:JString)->bool {
-    let result=serde_json::from_str::<ChapterRequest>(&request.to_string()).and_then(|r|{
-        if validate(&r).is_err(){return Err(serde::de::Error::custom("invalid chapter path"));}
-        *REQUEST.lock().unwrap()=Some(r);Ok(())
-    });result.is_ok()
+pub extern "system" fn Java_com_phigros_offline_ChapterPlayerActivity_configureChapter(mut env: EnvUnowned,_class:JClass,request:JString)->bool {
+    // This is the first jni-rs call in the child process. Display/to_string()
+    // cannot decode an argument before the VM singleton has been initialized.
+    env.with_env(|env| -> jni::errors::Result<bool> {
+        *REQUEST.lock().unwrap()=None;
+        let text=request.try_to_string(env)?;
+        let result=(|| -> Result<ChapterRequest> {
+            let r=serde_json::from_str::<ChapterRequest>(&text).context("播放器参数格式无效")?;
+            validate(&r)?;Ok(r)
+        })();
+        match result {
+            Ok(r)=>{*REQUEST.lock().unwrap()=Some(r);Ok(true)},
+            Err(error)=>{
+                env.throw_new(jni::jni_str!("java/io/IOException"),jni::strings::JNIString::new(format!("{error:#}")))?;
+                Ok(false)
+            }
+        }
+    }).resolve::<jni::errors::ThrowRuntimeExAndDefault>()
 }
 
 pub fn requested()->bool {REQUEST.lock().unwrap().is_some()}

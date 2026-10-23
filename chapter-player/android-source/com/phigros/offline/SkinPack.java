@@ -6,9 +6,11 @@ import java.nio.file.Files;
 import java.util.*;
 import java.util.zip.*;
 
-/** Standard Phira note textures only. No scripts, shaders, or native code are loaded. */
+/** Bounded Phira textures, hit effects, sounds and scalar style metadata. */
 public final class SkinPack {
     public static final String[] IMAGES={"click.png","drag.png","flick.png","hold.png","click_mh.png","drag_mh.png","flick_mh.png","hold_mh.png"};
+    public static final String[] SOUND_NAMES={"click","drag","flick","ending"};
+    public static final String[] SOUND_TYPES={"ogg","wav","mp3"};
     public final String id,name,author;
     public final File directory;
     public final int tail,head,tailMH,headMH;
@@ -38,7 +40,28 @@ public final class SkinPack {
         String[] keys={"holdRepeat","holdCompact","holdKeepHead"},labels={"长条重复平铺","紧凑长条","保留长条头"};
         for(int i=0;i<keys.length;i++)if(m.containsKey(keys[i])&&!"false".equals(m.get(keys[i])))
             throw new IOException("当前标准图集暂不支持“"+labels[i]+"”样式，请选择普通音符图包");
+        for(String k:new String[]{"hitFxRotate","hideParticles","hitFxTinted"})if(m.containsKey(k)&&!m.get(k).matches("true|false"))throw new IOException(k+" 须为 true 或 false");
+        for(String k:new String[]{"hitFxDuration","hitFxScale"})if(m.containsKey(k)){
+            try{String value=m.get(k);if(!value.matches("[0-9]+(\\.[0-9]+)?"))throw new NumberFormatException();double v=Double.parseDouble(value);if(!(v>0&&v<=10))throw new NumberFormatException();}
+            catch(NumberFormatException e){throw new IOException(k+" 须大于0且不超过10");}
+        }
+        for(String k:new String[]{"colorPerfect","colorGood"})if(m.containsKey(k)){
+            try{String value=m.get(k);if(!value.matches("(0[xX][0-9a-fA-F]{1,8}|[0-9]{1,10})"))throw new NumberFormatException();long v=value.startsWith("0x")||value.startsWith("0X")?Long.parseLong(value.substring(2),16):Long.parseLong(value);if(v>0xffffffffL)throw new NumberFormatException();}
+            catch(NumberFormatException e){throw new IOException(k+" 须为32位 RGB/ARGB 颜色数值");}
+        }
         return m;
+    }
+    private static void validateExtras(File bundle,Map<String,String> meta)throws IOException {
+        File fx=new File(bundle,"hit_fx.png");if(fx.exists()){
+            int[] wh=pngSize(fx),grid=atlas(meta.get("hitFx"));
+            if((long)grid[0]*grid[1]>10240||wh[0]%grid[0]!=0||wh[1]%grid[1]!=0)throw new IOException("击中特效图集 hitFx 超出范围或不能整分图片");
+        }
+        for(String sound:SOUND_NAMES)for(String type:SOUND_TYPES){File f=new File(bundle,sound+"."+type);if(!f.exists())continue;
+            if(Files.isSymbolicLink(f.toPath())||!f.isFile()||f.length()<12||f.length()>MAX_IMAGE)throw new IOException("音效文件无效或过大");
+            byte[] header=new byte[12];try(DataInputStream in=new DataInputStream(new FileInputStream(f))){in.readFully(header);}
+            boolean valid=type.equals("ogg")?header[0]=='O'&&header[1]=='g'&&header[2]=='g'&&header[3]=='S':type.equals("wav")?header[0]=='R'&&header[1]=='I'&&header[2]=='F'&&header[3]=='F'&&header[8]=='W'&&header[9]=='A'&&header[10]=='V'&&header[11]=='E':(header[0]=='I'&&header[1]=='D'&&header[2]=='3')||((header[0]&255)==255&&(header[1]&224)==224);
+            if(!valid)throw new IOException("音效格式与扩展名不符: "+f.getName());
+        }
     }
     private static String safeName(String name)throws IOException {
         if(name==null||name.isEmpty()||name.length()>1024||name.startsWith("/")||name.indexOf('\\')>=0||name.indexOf(':')>=0||name.indexOf('\0')>=0)throw new IOException("皮肤包路径无效");
@@ -75,8 +98,11 @@ public final class SkinPack {
                 if(name.equals("hold_mh.png")&&(long)result.tailMH+result.headMH>=wh[1])throw new IOException("复押长条图集超出图片范围");
                 for(String path:names)if(path.endsWith("/"+name)&&!path.equals(relative(scratch,p)))throw new IOException("皮肤包包含歧义图片: "+name);
             }
+            validateExtras(bundle,meta);
             if(!ready.mkdir())throw new IOException("无法创建待提交图包");
             for(String name:IMAGES)copy(new File(bundle,name),new File(ready,name));copy(infos.get(0),new File(ready,"info.yml"));
+            if(new File(bundle,"hit_fx.png").isFile())copy(new File(bundle,"hit_fx.png"),new File(ready,"hit_fx.png"));
+            for(String sound:SOUND_NAMES)for(String type:SOUND_TYPES){String name=sound+"."+type;if(new File(bundle,name).isFile())copy(new File(bundle,name),new File(ready,name));}
             if(destination.exists()||!ready.renameTo(destination))throw new IOException("无法原子提交皮肤");committed=true;return result;
         }finally{removeTemporary(root,scratch);removeTemporary(root,ready);if(!committed)removeTemporary(root,destination);}
     }
@@ -90,7 +116,7 @@ public final class SkinPack {
     }
     public static SkinPack open(File directory)throws IOException {
         String id=directory.getName();if(!id.matches("[0-9a-f-]{36}")||Files.isSymbolicLink(directory.toPath()))throw new IOException("皮肤标识无效");
-        SkinPack result=new SkinPack(id,directory,readMeta(new File(directory,"info.yml")));
+        Map<String,String> meta=readMeta(new File(directory,"info.yml"));SkinPack result=new SkinPack(id,directory,meta);validateExtras(directory,meta);
         for(String name:IMAGES){int[] size=pngSize(new File(directory,name));
             if(name.equals("hold.png")&&(long)result.tail+result.head>=size[1])throw new IOException("普通长条图集超出图片范围");
             if(name.equals("hold_mh.png")&&(long)result.tailMH+result.headMH>=size[1])throw new IOException("复押长条图集超出图片范围");

@@ -53,6 +53,9 @@ static result_fn result_original;
 static perfect_fn good_call;
 static void (*miss_original)(void *,float,const void *);
 static void (*bad_call)(void *,float,float,const void *);
+// Only active while one non-Tap original Judge executes its unhit cleanup.
+static _Thread_local void *early_bad_score;
+static _Thread_local float early_bad_code,early_bad_delay;
 
 static inline void *pointer(void *object,size_t offset) {
     return *(void **)((char *)object+offset);
@@ -90,7 +93,9 @@ static int ordinal(void *score,float code) {
         void *klass=judge?pointer(judge,0):NULL,*fields=klass?pointer(klass,0xb8):NULL;
         if(fields){float p=*number(fields,4),g=*number(fields,8);if(p>0.f&&g>p&&g<1.f){good_delay=(p+g)*0.5f;miss_delay=g;}}
         chart_plan_seed=plan_random(&chart_seed);if(!chart_plan_seed)chart_plan_seed=1;
-        PlanTimeline timeline=plan_timeline_seed(note_timing,note_types,n,good_delay,miss_delay,chart_plan_seed);
+        float bad_limit=fields?*number(fields,12):.22f;
+        if(!(bad_limit>miss_delay&&bad_limit<1.f))bad_limit=.22f;
+        PlanTimeline timeline=plan_timeline_windows(note_timing,note_types,n,good_delay,miss_delay,(miss_delay+bad_limit)*.5f,chart_plan_seed);
         timeline.challenge=fields&&*byte(fields,0);
         timeline.denominator=*integer(level,0x2c)>0?*integer(level,0x2c):n;
         int planned=make_profile_timed(&chart_config,n,chart_plan_seed,selected,&predicted,note_types,&timeline);
@@ -114,6 +119,10 @@ static void mark_hit(int i,int judgment) {
     }
 }
 static void miss(void *score,float code,const void *method) {
+    if(score==early_bad_score&&code==early_bad_code){
+        int i=ordinal(score,code);
+        if(i&&selected[i]==3&&!consumed[i]){mark_hit(i,3);bad_call(score,code,early_bad_delay,method);return;}
+    }
     if(atomic_load(&ready)&&atomic_load(&enabled)&&score)mark_hit(ordinal(score,code),1);
     miss_original(score,code,method);
 }
@@ -171,6 +180,32 @@ static bool automatic(void *self, const void *method, judge_fn original, int typ
     // Do not set synthetic input, isJudged, flick or hold grace flags for it.
     if(i && selected[i]==1)return time<due?false:original(self,method);
     bool starting=type!=3 || !*byte(self,0x8e);
+    if(starting&&i&&selected[i]==3){
+        void *klass=judge?pointer(judge,0):NULL;
+        void *fields=klass?pointer(klass,0xb8):NULL;
+        float g=fields?*number(fields,8):.18f,b=fields?*number(fields,12):.22f;
+        if(!(g>0.f&&b>g&&b<1.f)){g=.18f;b=.22f;}
+        float delay=-(g+b)*.5f;
+        if(time<due+delay)return false;
+        // ClickControl.Judge 0x1d8242c takes the real early-Bad branch:
+        // no normal hit sound; its original Bad object stays at note height.
+        if(type==0){
+            *byte(note,0x28)=1;*number(progress,0x90)=due+delay;
+            bool done=original(self,method);*number(progress,0x90)=time;
+            if(done)mark_hit(i,3);
+            return done;
+        }
+        // Drag/Flick/Hold have no native early-Bad branch. Preserve the user's
+        // opt-in forced Bad, using each original unhit-note cleanup (no hit
+        // sound/Perfect effect), and substitute only its scoped score callback.
+        early_bad_score=score;early_bad_code=*number(note,0x38);early_bad_delay=delay;
+        float cleanup_after=2.f;
+        if(type==3){float length=*number(note,0x1c);if(isfinite(length)&&length>0.f)cleanup_after=fmaxf(cleanup_after,length+.5f);}
+        // HoldControl only returns its object after head + holdTime + .25s.
+        *number(progress,0x90)=due+cleanup_after;
+        bool done=original(self,method);
+        *number(progress,0x90)=time;early_bad_score=NULL;return done;
+    }
     // Tap/Hold can naturally enter Good. Delay their initial synthetic contact;
     // keep Drag/Flick's original timing and forced rule semantics unchanged.
     float head_time=due;

@@ -10,8 +10,8 @@
                     continue;
                 }
                 if !matches!(note.judge,JudgeStatus::NotJudged){continue;}
-                if note.time>t+LIMIT_GOOD*spd{break;}
-                let delay=match desired{1=>LIMIT_BAD+0.001,2|5=>(LIMIT_PERFECT+LIMIT_GOOD)*0.5,4=>-(LIMIT_PERFECT+LIMIT_GOOD)*0.5,3=>(LIMIT_GOOD+LIMIT_BAD)*0.5,_=>0.};
+                if note.time>t+LIMIT_BAD*spd{break;}
+                let delay=match desired{1=>LIMIT_BAD+0.001,2|5=>(LIMIT_PERFECT+LIMIT_GOOD)*0.5,4=>-(LIMIT_PERFECT+LIMIT_GOOD)*0.5,3=>-(LIMIT_GOOD+LIMIT_BAD)*0.5,_=>0.};
                 if t<note.time+delay*spd{continue;}
                 if matches!(note.kind,NoteKind::Hold{..})&&matches!(desired,0|2|4|5){
                     note.hitsound.play(res);let perfect=desired==0;
@@ -34,7 +34,7 @@
         });
         for(line_id,id,desired)in events{
             let judgement=match desired{1=>Judgement::Miss,2|4|5=>Judgement::Good,3=>Judgement::Bad,_=>Judgement::Perfect};
-            let diff=match desired{1=>LIMIT_BAD+0.001,2|5=>(LIMIT_PERFECT+LIMIT_GOOD)*0.5,4=>-(LIMIT_PERFECT+LIMIT_GOOD)*0.5,3=>(LIMIT_GOOD+LIMIT_BAD)*0.5,_=>0.};
+            let diff=match desired{1=>LIMIT_BAD+0.001,2|5=>(LIMIT_PERFECT+LIMIT_GOOD)*0.5,4=>-(LIMIT_PERFECT+LIMIT_GOOD)*0.5,3=>-(LIMIT_GOOD+LIMIT_BAD)*0.5,_=>0.};
             self.commit(t,judgement,line_id as u32,id,diff);
             let line=&mut chart.lines[line_id];let note=&mut line.notes[id as usize];
             line.object.set_time(t);note.object.set_time(t);

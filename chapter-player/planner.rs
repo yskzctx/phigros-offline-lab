@@ -30,7 +30,7 @@ pub fn plan(c:&Controls,types:&[u8],seed:u32)->Vec<u8>{
 }
 // Delays match the opt-in local judge; Hold scores on release, not on press.
 pub fn event_time(start:f64,end:f64,kind:u8,judgment:u8)->f64{
- match judgment{1=>start+0.221,2|5=>if kind==3{end.max(start+0.12)}else{start+0.12},4=>if kind==3{end.max(start-0.12)}else{start-0.12},3=>start+0.19,_=>if kind==3{end.max(start)}else{start}}
+ match judgment{1=>start+0.221,2|5=>if kind==3{end.max(start+0.12)}else{start+0.12},4=>if kind==3{end.max(start-0.12)}else{start-0.12},3=>start-0.19,_=>if kind==3{end.max(start)}else{start}}
 }
 fn timeline(types:&[u8],times:&[(f64,f64)])->Vec<(f64,usize,u8)>{
  if times.len()!=types.len(){return Vec::new();}
@@ -72,6 +72,7 @@ pub fn plan_timed(c:&Controls,types:&[u8],seed:u32,times:&[(f64,f64)])->Vec<u8>{
 }
 #[cfg(test)] mod tests {
  use super::*;
+ #[test] fn bad_happens_before_head_even_for_holds(){for kind in 1..=4{assert_eq!(event_time(1.,5.,kind,3),0.81);}}
  #[test] fn explicit_perfect_protects_notes_from_later_rules_and_goals(){
   let c=Controls::parse(2,1_000_000,0,"0:2:1:20:1:;1:6:1:1:1:").unwrap();let p=plan(&c,&vec![1;100],42);
   assert!(p[..20].iter().all(|j|*j==0));assert!(p[20..].iter().all(|j|*j==1));

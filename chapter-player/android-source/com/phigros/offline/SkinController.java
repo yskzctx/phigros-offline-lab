@@ -36,7 +36,8 @@ public final class SkinController {
     static SkinPack importPack(Context c,InputStream stream)throws IOException {
         File root=home(c);SkinPack p=SkinPack.importPack(stream,root);
         try{
-            for(String name:SkinPack.IMAGES){File file=new File(p.directory,name);int[] expected=SkinPack.pngSize(file);BitmapFactory.Options options=new BitmapFactory.Options();options.inScaled=false;options.inPreferredConfig=Bitmap.Config.ARGB_8888;
+            List<String> images=new ArrayList<>(Arrays.asList(SkinPack.IMAGES));if(new File(p.directory,"hit_fx.png").isFile())images.add("hit_fx.png");
+            for(String name:images){File file=new File(p.directory,name);int[] expected=SkinPack.pngSize(file);BitmapFactory.Options options=new BitmapFactory.Options();options.inScaled=false;options.inPreferredConfig=Bitmap.Config.ARGB_8888;
                 Bitmap image=BitmapFactory.decodeFile(file.getAbsolutePath(),options);if(image==null)throw new IOException("无法解码皮肤图片: "+name);
                 try{if(image.getWidth()!=expected[0]||image.getHeight()!=expected[1])throw new IOException("图片解码尺寸不符");writePng(image,file);
                     if(name.startsWith("hold")){boolean mh=name.equals("hold_mh.png");int tail=mh?p.tailMH:p.tail,head=mh?p.headMH:p.head;String suffix=mh?"_mh":"";
