@@ -1,4 +1,5 @@
-import hashlib,importlib.util,tempfile
+import hashlib,importlib.util,tempfile,sys
+sys.dont_write_bytecode=True
 from pathlib import Path
 tool=Path(__file__).resolve().parents[2]/'tools/verify_release173_downloads.py'
 spec=importlib.util.spec_from_file_location('check_download',tool);m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m)
