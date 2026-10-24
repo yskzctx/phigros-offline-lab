@@ -1,0 +1,76 @@
+{
+  "update": 174,
+  "device_tested": false,
+  "build_verification": {
+    "version_code": 174,
+    "artifact": "Phigros-4.0.1-157-offline-arm64-controls-v174-COMBINED-CANDIDATE.apk",
+    "sha256": "d186832bd2600a1353ef6421d9159987d88639756ffc02f2a120bcd5f6597968",
+    "apk_bytes": 3343088773,
+    "signature_verified": true,
+    "alignment_verified": true,
+    "internet_permission": false,
+    "resource_entries_preserved": true,
+    "perfect_rules": true,
+    "good_early_late_rules": true,
+    "goals_mix_good_timing": true,
+    "synthetic_drag_flick_good_preserved": true,
+    "good_weight": 0.65,
+    "timing_aware_estimate": true,
+    "actual_result_readback": true,
+    "chapter_backend_sha256": "d03dba5088b4f83dcd9fe45a708938f3879e5af40a76cced02e8674de46e79a8",
+    "chapter_build_run": null,
+    "chapter_build": "local pinned upstream ARM64 cross compilation",
+    "chapter_fresh_jni_fixed": true,
+    "chapter_extended_skin_resources": true,
+    "early_bad_judgments": true,
+    "chapter_export_delete": true,
+    "device_tested": false,
+    "installed": false,
+    "published": false,
+    "limitations": [
+      "Predictions model judgment times; frame ordering, special chart logic and active mode may still affect actual results.",
+      "658000 result not diagnosed without its actual counts and longest combo.",
+      "Not a device-tested formal release.",
+      "Native Phigros chapters still use stock hit FX/audio/line colors; extended resource support currently belongs to custom chapters.",
+      "Intermittent corrupted phone downloads need per-volume hash verification; no transport-side fix is claimed."
+    ],
+    "chapter_backend_elf_alignment": 16384,
+    "same_signer_as_173": true,
+    "original_private_saves_accessed": false,
+    "original_app_operated": false,
+    "original_apk_resource_entries_preserved": true,
+    "source_commit": "74b60a27cc4876bb2f3c02eeaca5c774c18cdefe"
+  },
+  "archive_verification": {
+    "format": "standard split ZIP (z01, z02, zip)",
+    "password": null,
+    "entry": "Phigros-offline-v174.apk",
+    "entry_bytes": 3343088773,
+    "entry_sha256": "d186832bd2600a1353ef6421d9159987d88639756ffc02f2a120bcd5f6597968",
+    "parts": [
+      {
+        "name": "Phigros-offline-v174.z01",
+        "bytes": 1073741824,
+        "sha256": "691c2ca9477dcff0e537a020662b787496e8f569416358884a3827c429444568"
+      },
+      {
+        "name": "Phigros-offline-v174.z02",
+        "bytes": 1073741824,
+        "sha256": "3cdeac801e70944ca28ded3efa5bbb95d5c5c888930799386f3478a862f27203"
+      },
+      {
+        "name": "Phigros-offline-v174.zip",
+        "bytes": 819237212,
+        "sha256": "9f178683423cf27e19b194e94ef360f4a8c17c1de86690eef1bebdd97f247c3d"
+      }
+    ],
+    "full_stream_extraction_verified_by": {
+      "ZIP4J 2.11.5": "zip4j-verify.log",
+      "7-Zip": "7zip-verify.log",
+      "SevenZipJBinding 16.02": "sevenzipjbinding-verify.log"
+    },
+    "phone_download_tested": false,
+    "phone_extractor_tested": false,
+    "published": false
+  }
+}
