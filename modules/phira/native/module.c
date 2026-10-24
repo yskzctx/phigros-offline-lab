@@ -37,7 +37,7 @@ static void loaded(const char *name,void *handle){
  if(!symbol||!dladdr(symbol,&info)||!info.dli_fbase){pthread_mutex_unlock(&lock);return;}
  Range r={.base=(uintptr_t)info.dli_fbase};dl_iterate_phdr(range,&r);void *target=(void*)(r.base+GAME_UPDATE_RVA);
  if(!r.okay||memcmp(target,game_prefix,sizeof(game_prefix))){__android_log_print(ANDROID_LOG_ERROR,"PhiraLab","Native profile mismatch; no activation");pthread_mutex_unlock(&lock);return;}
- if(batch_install(&batch,target,(void*)game_update,(void**)&game_original)==0){atomic_store(&ready,true);__android_log_print(ANDROID_LOG_INFO,"PhiraLab","Original offline-mode/autoplay adapter installed; autoplay off");}else{batch_rollback(&batch);}
+ if(batch_install(&batch,target,(void*)game_update,(void**)&game_original)==0&&game_original){atomic_store(&ready,true);__android_log_print(ANDROID_LOG_INFO,"PhiraLab","Original offline-mode/autoplay adapter installed; autoplay off");}else{batch_rollback(&batch);}
  pthread_mutex_unlock(&lock);
 }
 __attribute__((visibility("default"),used)) LibraryLoaded native_init(const NativeAPI *api){if(!api||api->version<1||api->version>2||!api->hook||!api->unhook)return NULL;batch.hook=api->hook;batch.unhook=api->unhook;void *existing=dlopen("libphira.so",RTLD_NOW|RTLD_NOLOAD);if(existing){loaded("libphira.so",existing);dlclose(existing);}return loaded;}

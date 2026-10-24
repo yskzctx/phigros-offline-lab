@@ -10,7 +10,7 @@
     },
     {
       "path": "src/Entry.java",
-      "sha256": "40c1e4509c64eadf54916fe59221bf28a7b8f0e476b6259ef995b14eeedb6093"
+      "sha256": "666a309192ff09b1c128a7ac25eede7d885ffadf6ae9df2cd7670e97fded2005"
     },
     {
       "path": "src/InfoActivity.java",
@@ -26,7 +26,7 @@
     },
     {
       "path": "native/module.c",
-      "sha256": "d878e36105ed6ecad19f53b5f99e4e92b62d8ef6676dd1e254bfa4549f53da48"
+      "sha256": "d7fff7c921a1c091bb26b57d3d3534976a661cb7f18aae491ddfe10d732cc85f"
     },
     {
       "path": "native/frame-policy.h",
