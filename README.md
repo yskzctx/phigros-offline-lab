@@ -12,7 +12,7 @@
 
 ## LSPosed 实验模块（开发中）
 
-2026-10-24 已根据新的需求恢复两个模块计划。Phira 原版 0.8.2 arm64 的模块源码与构建说明见 [modules/phira](modules/phira/README.md)：当前候选包含标准 AP 自动游玩、音量键面板、独立实验存档、原版自制谱/完整皮肤导入，以及本地历史全 AP/恢复。目标分数、准确率、逐音符规则和 RKS 尚未接入，尚未真机验收，不能称为全功能移植或正式发行版。
+2026-10-24 已根据新的需求恢复两个模块计划，并新建 [两个模块的独立公开仓库](https://github.com/yskzctx/phigros-phira-lsposed-lab)。对应 APK、安装说明、校验文件和对应源码见 [v0.1.0-pre.1 公开预发行](https://github.com/yskzctx/phigros-phira-lsposed-lab/releases/tag/v0.1.0-pre.1)。两个模块均未真机验收；Phira 的目标分数、准确率、逐音符规则和 RKS 尚未接入，Phigros 原生章节的扩展特效/音效/判定线颜色未完成。本仓库 modules/phira 保留为开发历史快照，后续模块以独立仓库说明为准，不能称为全功能移植或正式发行版。
 
 ## 历史版本与验证记录
 
