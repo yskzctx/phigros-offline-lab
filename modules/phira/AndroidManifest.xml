@@ -1,0 +1,8 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.phira.lab.lsp" android:versionCode="1" android:versionName="0.1-dev">
+ <uses-sdk android:minSdkVersion="26" android:targetSdkVersion="34" />
+ <queries><package android:name="org.flos.phira" /></queries>
+ <application android:label="Phira 本地实验模块" android:theme="@android:style/Theme.Material.Light.NoActionBar" android:allowBackup="false" android:extractNativeLibs="true" android:multiArch="true">
+  <meta-data android:name="xposedmodule" android:value="true" /><meta-data android:name="xposedminversion" android:value="93" /><meta-data android:name="xposeddescription" android:value="Phira 0.8.2 arm64 离线实验与原版自动游玩；开发候选，尚未真机验收" />
+  <activity android:name="com.phira.lab.InfoActivity" android:exported="true"><intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter></activity>
+ </application>
+</manifest>

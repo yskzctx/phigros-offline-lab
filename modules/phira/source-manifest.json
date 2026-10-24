@@ -1,0 +1,53 @@
+{
+  "source_files": [
+    {
+      "path": "AndroidManifest.xml",
+      "sha256": "6d5b217e7ff48bb061c81a597401cc0576fd724333f09c2be5c38f393def0f3d"
+    },
+    {
+      "path": "src/Controls.java",
+      "sha256": "2e74942efe533671c4e6792096c3348793391f41638cf88c0c824813f2913344"
+    },
+    {
+      "path": "src/Entry.java",
+      "sha256": "40c1e4509c64eadf54916fe59221bf28a7b8f0e476b6259ef995b14eeedb6093"
+    },
+    {
+      "path": "src/InfoActivity.java",
+      "sha256": "5440c7e624f9b9216936cd53ed6e8e3bbce075184a6327e7767a9463e1b5dd11"
+    },
+    {
+      "path": "src/LabNative.java",
+      "sha256": "6dcd58beae30bea80fc015893066c9650279c0cac342a3d0a2d2125477b568f3"
+    },
+    {
+      "path": "src/LabStore.java",
+      "sha256": "1734a6958fde86d877b884a88db4364e9c1a60e03ccf88c5d49d4a3a027fd067"
+    },
+    {
+      "path": "native/module.c",
+      "sha256": "d878e36105ed6ecad19f53b5f99e4e92b62d8ef6676dd1e254bfa4549f53da48"
+    },
+    {
+      "path": "native/frame-policy.h",
+      "sha256": "18106e10301f8f714a25104ab650c8fa4ddeea122f6c957080953b0faf3206bd"
+    },
+    {
+      "path": "native/profile.h",
+      "sha256": "91ce51fa6b043188405cff1a1a2132e4a96540479379e9a2dc2cab9be997d7d0"
+    },
+    {
+      "path": "tests/LabStoreTest.java",
+      "sha256": "a898f4964aff4ec114a4ef98a61f89818fcabfe185233cce1a365bb4334dd144"
+    },
+    {
+      "path": "tests/frame-policy-test.c",
+      "sha256": "9fec3cf9950f2d07d8ca1d0054652a1e375192cdbd479d54b5428215f83e7d23"
+    }
+  ],
+  "original_game_binary_included": false,
+  "credentials_included": false,
+  "private_saves_included": false,
+  "device_tested": false,
+  "complete_feature_parity": false
+}

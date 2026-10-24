@@ -13,3 +13,11 @@ goal-rules-test
 native-dispatch-test
 
 tests/storage-test-167/
+
+modules/**/module-build/
+modules/**/classes/
+modules/**/test-classes/
+modules/**/build/
+*.z01
+*.z02
+*.zip

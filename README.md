@@ -10,10 +10,14 @@
 
 对应完整控制与内置章节适配源码见 [v173 标签](https://github.com/yskzctx/phigros-offline-lab/tree/v173)，重点目录为 `chapter-player/` 和 `chapter-player/android-source/`；这些源码也已合入主分支。根目录 `src/` 保留的是旧版快照，173 请使用上述目录。主分支下方旧版本功能及真机记录是历史资料。
 
+## LSPosed 实验模块（开发中）
+
+2026-10-24 已根据新的需求恢复两个模块计划。Phira 原版 0.8.2 arm64 的模块源码与构建说明见 [modules/phira](modules/phira/README.md)：当前候选包含标准 AP 自动游玩、音量键面板、独立实验存档、原版自制谱/完整皮肤导入，以及本地历史全 AP/恢复。目标分数、准确率、逐音符规则和 RKS 尚未接入，尚未真机验收，不能称为全功能移植或正式发行版。
+
 ## 历史版本与验证记录
 
 
-**可选测试：172 预发行版（待真机验证）** — [下载与发布说明](https://github.com/yskzctx/phigros-offline-lab/releases/tag/v172-pre.1) · [安装与测试步骤](https://github.com/yskzctx/phigros-offline-lab/blob/v172-pre.1/docs/INSTALL-172.md)。自制章节、谱面导入、音符皮肤及原有控制合并为一个 APK。两个 LSPosed 模块及面向 Phira 原版的独立开发计划已于 2026-10-15 取消。167 保留为历史发行版。
+**可选测试：172 预发行版（待真机验证）** — [下载与发布说明](https://github.com/yskzctx/phigros-offline-lab/releases/tag/v172-pre.1) · [安装与测试步骤](https://github.com/yskzctx/phigros-offline-lab/blob/v172-pre.1/docs/INSTALL-172.md)。自制章节、谱面导入、音符皮肤及原有控制合并为一个 APK。两个 LSPosed 模块计划曾在 2026-10-15 取消，现已按新需求恢复开发，当前范围见上方实验模块说明。167 保留为历史发行版。
 
 
 基于 Phigros 4.0.1（157）的非官方 arm64 本地测试修改版。167 是此前的正式版本，其储存修复及真机记录保留在下文。

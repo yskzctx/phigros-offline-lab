@@ -1,0 +1,23 @@
+package com.phira.lab;
+import java.io.*;import java.nio.charset.StandardCharsets;import java.nio.file.*;import org.json.*;
+public final class LabStoreTest {
+ static void write(File f,String s)throws Exception{Files.write(f.toPath(),s.getBytes(StandardCharsets.UTF_8));}
+ static JSONObject read(File f)throws Exception{return new JSONObject(new String(Files.readAllBytes(f.toPath()),StandardCharsets.UTF_8));}
+ static void check(boolean c,String s){if(!c)throw new AssertionError(s);}
+ public static void main(String[] args)throws Exception{
+  File temp=Files.createTempDirectory(Paths.get(args[0]),"phira-store-").toFile();File original=new File(temp,"original"),privateFiles=new File(temp,"private");original.mkdir();privateFiles.mkdir();
+  String originalData="{\"tokens\":[\"private-token\",\"private-refresh\"],\"local_records\":{\"original\":null}}";write(new File(original,"data.json"),originalData);
+  File lab=LabStore.prepare(original,privateFiles);check(new File(lab,"original-data-backup.json").isFile(),"backup missing");
+  check(new String(Files.readAllBytes(new File(original,"data.json").toPath()),StandardCharsets.UTF_8).equals(originalData),"original changed");
+  JSONObject data=read(new File(lab,"data.json"));check(data.isNull("tokens")&&data.isNull("me"),"original account copied");check(data.getJSONObject("config").getBoolean("offlineMode"),"not offline");
+  data.put("local_records",new JSONObject("{\"before\":{\"score\":800000}}"));data.getJSONObject("config").put("mods","FLIP_X | AUTOPLAY").put("autoplay",true);write(new File(lab,"data.json"),data.toString());
+  data.put("charts",new JSONArray("[{\"local_path\":\"custom/one\",\"record\":{\"score\":800000,\"accuracy\":0.8,\"fullCombo\":false}}]"));write(new File(lab,"data.json"),data.toString());
+  LabStore.beginAutoplay(lab);data.put("local_records",new JSONObject("{\"synthetic\":{\"score\":1000000}}"));data.getJSONArray("charts").getJSONObject(0).put("record",new JSONObject("{\"score\":1000000}"));data.getJSONArray("charts").put(new JSONObject("{\"local_path\":\"custom/new-import\",\"record\":{\"score\":1000000}}"));data.put("respacks",new JSONArray("[\"new-skin\"]"));write(new File(lab,"data.json"),data.toString());
+  LabStore.prepare(original,privateFiles);data=read(new File(lab,"data.json"));check(data.getJSONObject("local_records").has("before")&&!data.getJSONObject("local_records").has("synthetic"),"session records not restored");check(data.getJSONArray("charts").getJSONObject(1).getString("local_path").equals("custom/new-import")&&data.getJSONArray("respacks").getString(0).equals("new-skin"),"imported content lost during restore");check(data.getJSONArray("charts").getJSONObject(0).getJSONObject("record").getInt("score")==800000,"imported chart record not restored");check(data.getJSONArray("charts").getJSONObject(1).isNull("record"),"new imported chart synthetic record survived");check(data.getJSONObject("config").getString("mods").equals("FLIP_X"),"autoplay not reset or other modifiers lost");check(!data.getJSONObject("config").getBoolean("autoplay"),"legacy autoplay not reset");
+  check(new String(Files.readAllBytes(new File(original,"data.json").toPath()),StandardCharsets.UTF_8).equals(originalData),"original changed during restoration");
+  LabStore.queueHistory(lab,"all-ap");LabStore.prepare(original,privateFiles);data=read(new File(lab,"data.json"));check(data.getJSONArray("charts").getJSONObject(0).getJSONObject("record").getInt("score")==1000000,"history AP not applied");check(data.getJSONArray("charts").getJSONObject(1).getJSONObject("record").getDouble("accuracy")==1.0,"new chart AP missing");check(data.getJSONObject("local_records").getJSONObject("before").getBoolean("fullCombo"),"local records AP marker missing");
+  LabStore.queueHistory(lab,"restore");LabStore.prepare(original,privateFiles);data=read(new File(lab,"data.json"));check(data.getJSONArray("charts").getJSONObject(0).getJSONObject("record").getInt("score")==800000,"history original record not restored");check(data.getJSONArray("charts").getJSONObject(1).isNull("record"),"history restore lost null record");check(data.getJSONArray("charts").length()==2&&data.getJSONArray("respacks").length()==1,"history operations lost imported files/index");
+  File blocked=new File(temp,"blocked");blocked.mkdir();write(new File(blocked,"phira-lab-082"),"file");boolean refused=false;try{LabStore.prepare(original,blocked);}catch(IOException okay){refused=true;}check(refused,"unexpected root accepted");
+  System.out.println("PASS: original intact, private backup, no account copying, cold autoplay reset and record-only restore preserve imported charts/skins");
+ }
+}
