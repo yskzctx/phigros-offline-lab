@@ -1,0 +1,86 @@
+{
+  "repository": "https://github.com/yskzctx/phigros-offline-lab",
+  "release": "https://github.com/yskzctx/phigros-offline-lab/releases/tag/v175-pre.1",
+  "tag": "v175-pre.1",
+  "source_commit": "d0385e731f68c52608c16f3c67d66ea8bf6b56c2",
+  "date": "2026-10-25",
+  "published": true,
+  "draft": false,
+  "prerelease": true,
+  "device_tested": false,
+  "stable_latest_preserved": "v174",
+  "assets": [
+    {
+      "name": "Phigros-offline-v175.z01",
+      "bytes": 1073741824,
+      "sha256": "289dfbf35926a41459465e9d9fc7f53d051fae01e9bf5e1c6e78dd5de0e61ee0",
+      "url": "https://github.com/yskzctx/phigros-offline-lab/releases/download/v175-pre.1/Phigros-offline-v175.z01",
+      "server_digest_verified": true,
+      "anonymous_full_download_verified": false,
+      "anonymous_range_verified": true
+    },
+    {
+      "name": "Phigros-offline-v175.z02",
+      "bytes": 1073741824,
+      "sha256": "be68e7540b88cda74b8c5c8d7c4c66dea436186d08ad324156b386acb10c1a0e",
+      "url": "https://github.com/yskzctx/phigros-offline-lab/releases/download/v175-pre.1/Phigros-offline-v175.z02",
+      "server_digest_verified": true,
+      "anonymous_full_download_verified": false,
+      "anonymous_range_verified": true
+    },
+    {
+      "name": "Phigros-offline-v175.zip",
+      "bytes": 819236596,
+      "sha256": "3b25b1c13cf85931c8cdf5e36bd574df13f9075987a17a4c4c10ee49b1d759ce",
+      "url": "https://github.com/yskzctx/phigros-offline-lab/releases/download/v175-pre.1/Phigros-offline-v175.zip",
+      "server_digest_verified": true,
+      "anonymous_full_download_verified": false,
+      "anonymous_range_verified": true
+    },
+    {
+      "name": "INSTALL-175.md",
+      "bytes": 1795,
+      "sha256": "d93eafc11c885551f731b04c5445103a17a94e989cd16f417e2fc05ea857bc8f",
+      "url": "https://github.com/yskzctx/phigros-offline-lab/releases/download/v175-pre.1/INSTALL-175.md",
+      "server_digest_verified": true,
+      "anonymous_full_download_verified": true,
+      "anonymous_range_verified": false
+    },
+    {
+      "name": "CHANGES-175.md",
+      "bytes": 1795,
+      "sha256": "d93eafc11c885551f731b04c5445103a17a94e989cd16f417e2fc05ea857bc8f",
+      "url": "https://github.com/yskzctx/phigros-offline-lab/releases/download/v175-pre.1/CHANGES-175.md",
+      "server_digest_verified": true,
+      "anonymous_full_download_verified": true,
+      "anonymous_range_verified": false
+    },
+    {
+      "name": "Phigros-chapter-source-v175.tar.gz",
+      "bytes": 4395438,
+      "sha256": "72902dfa6a33034014b6436cdce2d04aae29ff27cad41ca0eade0bf707f2f228",
+      "url": "https://github.com/yskzctx/phigros-offline-lab/releases/download/v175-pre.1/Phigros-chapter-source-v175.tar.gz",
+      "server_digest_verified": true,
+      "anonymous_full_download_verified": true,
+      "anonymous_range_verified": false
+    },
+    {
+      "name": "VERIFICATION-175.json",
+      "bytes": 6031,
+      "sha256": "f76ef9d8b8cc8351b1238a7616e7864eb74c183d698ce7902c6ac54095992428",
+      "url": "https://github.com/yskzctx/phigros-offline-lab/releases/download/v175-pre.1/VERIFICATION-175.json",
+      "server_digest_verified": true,
+      "anonymous_full_download_verified": true,
+      "anonymous_range_verified": false
+    },
+    {
+      "name": "SHA256SUMS.txt",
+      "bytes": 631,
+      "sha256": "5c63f6746bac5318f5da5385d4c3180de4f67d8039004e9c68dd2b66b1561660",
+      "url": "https://github.com/yskzctx/phigros-offline-lab/releases/download/v175-pre.1/SHA256SUMS.txt",
+      "server_digest_verified": true,
+      "anonymous_full_download_verified": true,
+      "anonymous_range_verified": false
+    }
+  ]
+}
