@@ -5,6 +5,16 @@
 </style></head><body><main class="app">
 <nav class="tabs" aria-label="设置页面"><button class="tab active" data-tab="play">游玩</button><button class="tab" data-tab="rules">判定规则 <span id="rule-count">0</span></button><button class="tab" data-tab="history">存档</button></nav>
 <div class="pages">
+<details id="usage-disclaimer" class="card"><summary><strong>免责声明与使用范围 · 请阅读</strong></summary><p class="muted" style="white-space:pre-line">本项目为非官方实验工具，与 Phigros、Phira 官方及资源权利人无隶属关系，不代表官方认可或背书。游戏、音乐、谱面、插画与皮肤等权利归各自权利人所有；本项目不额外授予资源的使用或再分发权利。
+
+自动游玩、判定干预、全 AP 与目标 RKS 所产生的数据为模拟数据，不是真实手动游玩成绩，不得据此冒充正常成绩或制作误导性证明。
+
+测试软件可能崩溃、漏判、误判、损坏或改变存档；请先备份，并核对适配版本。仅使用本人有权使用的游戏、谱面和皮肤，不提供购买、账号、服务器、签名完整性或反作弊校验绕过。
+
+本修改版仅供本地使用：独立包名与存档，不提供账号登录、排行榜、云存档或其他线上操作，不声明网络权限。不得将模拟记录上传在线服务。
+
+本说明用于告知权属、功能边界与已知风险，不替代合法授权，不构成免责承诺，也不免除依法应承担的责任。有问题可到对应 GitHub 仓库 Issues 反馈；请勿公开私人存档、账号凭据、签名密钥或设备日志。</p></details>
+<details id="network-policy" class="card"><summary>离线修改版 · 仅限本地 · 不可登录账号</summary><p class="muted">不可登录账号，不提供排行榜、云存档或其他线上操作。此应用不声明网络权限。</p></details>
 <section id="play" class="page active">
  <div class="card"><div class="row between"><label class="switch"><input id="auto" type="checkbox">自动游玩</label><span class="pill" id="auto-label">关闭</span></div><p class="muted">冷启动默认关闭。自动会话成绩在下次冷启动恢复。</p></div>
  <div class="card"><h2>这局怎么打</h2><div class="mode" role="group" aria-label="自动游玩目标"><button data-mode="0" class="active">默认 AP</button><button data-mode="1">目标分数</button><button data-mode="2">目标准确率</button></div>
@@ -25,6 +35,7 @@
 </main><div id="toast" class="toast hidden" role="status"></div>
 <section id="choice-sheet" class="choice-sheet hidden" role="dialog" aria-modal="true" aria-labelledby="choice-title"><div class="choice-header"><h2 id="choice-title">选择规则</h2><button id="choice-cancel">取消</button></div><div id="choice-options" class="choice-options"></div><p class="choice-footer">在面板内选择，更多选项可上下滑动。</p></section>
 <script>
+try{if(typeof OfflineBridge!=='undefined'&&typeof OfflineBridge.environment==='function'&&OfflineBridge.environment()!=='offline')document.querySelector('#usage-disclaimer p').textContent="本项目为非官方实验工具，与 Phigros、Phira 官方及资源权利人无隶属关系，不代表官方认可或背书。游戏、音乐、谱面、插画与皮肤等权利归各自权利人所有；本项目不额外授予资源的使用或再分发权利。\n\n自动游玩、判定干预、全 AP 与目标 RKS 所产生的数据为模拟数据，不是真实手动游玩成绩，不得据此冒充正常成绩或制作误导性证明。\n\n测试软件可能崩溃、漏判、误判、损坏或改变存档；请先备份，并核对适配版本。仅使用本人有权使用的游戏、谱面和皮肤，不提供购买、账号、服务器、签名完整性或反作弊校验绕过。\n\n模块直接使用原版现有存档，修改前备份。模块不统一断网，保留原版登录和上传流程；是否接受由原版及服务器决定，不承诺上传成功。本地恢复不撤回已上传数据，使用者须遵守平台规则与资源授权。\n\n本说明用于告知权属、功能边界与已知风险，不替代合法授权，不构成免责承诺，也不免除依法应承担的责任。有问题可到对应 GitHub 仓库 Issues 反馈；请勿公开私人存档、账号凭据、签名密钥或设备日志。";}catch(ignored){}
 let mode=0,rules=[],dirty=false,initial=false;
 const $=id=>document.getElementById(id),hasBridge=typeof OfflineBridge!=='undefined';
 function toast(s){$('toast').textContent=s;$('toast').classList.remove('hidden');clearTimeout(window.toastTimer);window.toastTimer=setTimeout(()=>$('toast').classList.add('hidden'),2600)}
@@ -60,5 +71,8 @@ $('rks-apply').onclick=()=>send('rks',{target:$('rks').value});$('all-ap').oncli
 window.receive=function(s){$('auto').checked=!!s.auto;$('auto').disabled=false;$('auto-label').textContent=s.auto?'开启':'关闭';$('skin-state').textContent=s.skin||'默认皮肤';
  if(!initial||s.reload){initial=true;dirty=false;setMode(s.mode||0);$('score').value=s.score;$('accuracy').value=s.accuracy;rules=(s.rules||[]).map(r=>({...r,noteType:r.noteType||0}));renderRules();$('rks').value=s.rksTarget||'';showDirty()}
  let text=s.runtime||'在选曲页保存，下局使用新设置。';$('runtime').replaceChildren();let strong=document.createElement('strong');strong.textContent=s.auto?'自动游玩已开启':'当前为手动模式';$('runtime').append(strong,document.createTextNode(text));let history=s.history||'';$('history-state').textContent=history;$('history-state').classList.toggle('hidden',!history);if(s.message)toast(s.message);if(s.saved){dirty=false;showDirty()}};
+try{if(hasBridge&&typeof OfflineBridge.environment==='function'&&OfflineBridge.environment()==='module'){
+ const box=$('network-policy');box.replaceChildren();const title=document.createElement('summary');title.textContent='LSPosed 模块 · 保留宿主联网';const detail=document.createElement('p');detail.className='muted';detail.textContent='保留登录及原版上传流程，模拟成绩也可按原版条件尝试上传；是否接受由原版与服务器决定。本地重启恢复不会撤回已经上传的记录。';box.append(title,detail);
+}}catch(ignore){}
 if(hasBridge)send('ready');else window.receive({auto:false,mode:0,score:'900000',accuracy:'90',rules:[],runtime:'界面预览 · 手机上显示实际执行数量和预测成绩',history:'此页为浅色界面预览，不修改任何游戏数据。'});
 </script></body></html>

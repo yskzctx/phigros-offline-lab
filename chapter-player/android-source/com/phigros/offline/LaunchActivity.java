@@ -23,6 +23,10 @@ public final class LaunchActivity extends Activity {
 
     @Override public void onCreate(Bundle saved) {
         super.onCreate(saved);
+        UsageNotice.show(this,this::prepareGame,this::finish);
+    }
+
+    private void prepareGame() {
         if (launched) { startGame(); return; }
         OfflineAssets.initialize(this);
         progress = new ProgressDialog(this);
