@@ -1,0 +1,89 @@
+{
+  "repository": "https://github.com/yskzctx/phigros-offline-lab",
+  "release": "https://github.com/yskzctx/phigros-offline-lab/releases/tag/v176-pre.1",
+  "tag": "v176-pre.1",
+  "source_commit": "c33273543df538fa78882f9911c646637c939392",
+  "date": "2026-10-25",
+  "published": true,
+  "draft": false,
+  "prerelease": true,
+  "device_tested": false,
+  "withdrawn_obsolete_releases_preserved_as_drafts": [
+    "v175-pre.1"
+  ],
+  "assets": [
+    {
+      "name": "Phigros-offline-v176.z01",
+      "bytes": 1073741824,
+      "sha256": "35abefdbfcbe070d7b5048a9ecd3121b9e095159903ba33c53bf725ab9089d74",
+      "url": "https://github.com/yskzctx/phigros-offline-lab/releases/download/v176-pre.1/Phigros-offline-v176.z01",
+      "server_digest_verified": true,
+      "anonymous_full_download_verified": false,
+      "anonymous_range_verified": true
+    },
+    {
+      "name": "Phigros-offline-v176.z02",
+      "bytes": 1073741824,
+      "sha256": "fe2e98b68f1d1a57717c1175bbcbca3db2722075d06b6f4a1299c753adc9054f",
+      "url": "https://github.com/yskzctx/phigros-offline-lab/releases/download/v176-pre.1/Phigros-offline-v176.z02",
+      "server_digest_verified": true,
+      "anonymous_full_download_verified": false,
+      "anonymous_range_verified": true
+    },
+    {
+      "name": "Phigros-offline-v176.zip",
+      "bytes": 819238266,
+      "sha256": "a728152d505c0e8dbcf88bee95d26a8d889f899f0102fb9cd38dd16a7b9b2d54",
+      "url": "https://github.com/yskzctx/phigros-offline-lab/releases/download/v176-pre.1/Phigros-offline-v176.zip",
+      "server_digest_verified": true,
+      "anonymous_full_download_verified": false,
+      "anonymous_range_verified": true
+    },
+    {
+      "name": "INSTALL-176.md",
+      "bytes": 1374,
+      "sha256": "f478fc26b1ec1409efdbf4e45e0b769656fc8753f687d5117986b765c77d930c",
+      "url": "https://github.com/yskzctx/phigros-offline-lab/releases/download/v176-pre.1/INSTALL-176.md",
+      "server_digest_verified": true,
+      "anonymous_full_download_verified": true,
+      "anonymous_range_verified": false
+    },
+    {
+      "name": "DISCLAIMER.md",
+      "bytes": 1195,
+      "sha256": "e419bf37b8f8ae5c60b491333e4675a76adc6dc23c115477b29cbc5d8917f5c1",
+      "url": "https://github.com/yskzctx/phigros-offline-lab/releases/download/v176-pre.1/DISCLAIMER.md",
+      "server_digest_verified": true,
+      "anonymous_full_download_verified": true,
+      "anonymous_range_verified": false
+    },
+    {
+      "name": "Phigros-chapter-source-v176.tar.gz",
+      "bytes": 4395438,
+      "sha256": "72902dfa6a33034014b6436cdce2d04aae29ff27cad41ca0eade0bf707f2f228",
+      "url": "https://github.com/yskzctx/phigros-offline-lab/releases/download/v176-pre.1/Phigros-chapter-source-v176.tar.gz",
+      "server_digest_verified": true,
+      "anonymous_full_download_verified": true,
+      "anonymous_range_verified": false
+    },
+    {
+      "name": "VERIFICATION-176.json",
+      "bytes": 1451,
+      "sha256": "1c697c6cb0c8af6c4b6a9d49ac2888163c2679c959292a43cc779c55a50a2cf1",
+      "url": "https://github.com/yskzctx/phigros-offline-lab/releases/download/v176-pre.1/VERIFICATION-176.json",
+      "server_digest_verified": true,
+      "anonymous_full_download_verified": true,
+      "anonymous_range_verified": false
+    },
+    {
+      "name": "SHA256SUMS.txt",
+      "bytes": 630,
+      "sha256": "21d47153d45667df00b3ce9ff2ccd3a93c26e70d62807a0e519c11996d88c6d7",
+      "url": "https://github.com/yskzctx/phigros-offline-lab/releases/download/v176-pre.1/SHA256SUMS.txt",
+      "server_digest_verified": true,
+      "anonymous_full_download_verified": true,
+      "anonymous_range_verified": false
+    }
+  ],
+  "embedded_startup_and_panel_disclaimer": true
+}
