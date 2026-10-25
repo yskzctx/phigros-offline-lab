@@ -1,0 +1,83 @@
+{
+  "shared_native_source_sha256": "ae93ae373ea1d9ed2030030fdb9367a0b020fcc8fff1d495f35686ea149b245b",
+  "legacy_regressions": [
+    {
+      "name": "goals173_test",
+      "result": "PASS: synthetic Drag/Flick Good preserved, Perfect precedence, audited Good 0.65"
+    },
+    {
+      "name": "timing173_test",
+      "result": "PASS: hold-tail and delayed Good/Miss chronology instead of start order"
+    },
+    {
+      "name": "goal_rules173_test",
+      "result": "PASS natural score/accuracy planning, rule priority, small/large charts, explicit constraints"
+    },
+    {
+      "name": "note_type173_test",
+      "result": "PASS: note type filters, eligible random counts, global numbering, overlapping priority, empty type and legacy all"
+    },
+    {
+      "name": "native_goals173_test",
+      "result": "PASS: actual dispatch/readback, Good on all four types, all-Good 685000, timing-aware score/accuracy, Perfect protection"
+    },
+    {
+      "name": "good_timing173_test",
+      "result": "PASS: Early before due, Late after due, active Good window, Hold state, restored clock and mixed timing"
+    },
+    {
+      "name": "hold_good173_test",
+      "result": "PASS: Hold Good head state and real clock restoration"
+    },
+    {
+      "name": "bad_timing174_test",
+      "result": "PASS: Bad before due on all four note types, no normal hit sounds, original Tap Bad path, scoped forced judgments, restored clock"
+    },
+    {
+      "name": "ControlsPerfect173Test",
+      "result": "PASS: Perfect in all position/type combinations and bounds"
+    },
+    {
+      "name": "ControlsNoteTypeTest",
+      "result": "PASS: five note filters, old configuration compatibility, active targets and invalid type rejection"
+    },
+    {
+      "name": "ControlsRulesTest",
+      "result": "PASS rule list validation, decimal accuracy, duplicate notes, JNI encoding"
+    },
+    {
+      "name": "SkinPackTest",
+      "result": "PASS: 23 assertions; standard/MH images, atlas bounds, UTF-8, wrapper folder, safe paths, rollback and existing data preservation"
+    },
+    {
+      "name": "ChapterPackTest",
+      "result": "PASS: PGR/RPE JSON, PEC/PBC bundle metadata, local dependencies, ambiguous metadata, unsafe paths, online ids, executable rejection and transactional preservation; gameplay parsing is validated by native player separately"
+    },
+    {
+      "name": "SkinResources174Test",
+      "result": "PASS: optional FX/sound retained, colors and effect metadata exported, custom WAV precedence, fallbacks, atlas bounds"
+    },
+    {
+      "name": "ChapterFiles174Test",
+      "result": "PASS: root-free ZIP roundtrip, local record exclusion, scoped delete and preservation of other data"
+    },
+    {
+      "name": "planner",
+      "result": "running 9 tests\ntest tests::bad_happens_before_head_even_for_holds ... ok\ntest tests::default_is_ap_and_rules_have_priority ... ok\ntest tests::good_weight_is_sixty_five_percent ... ok\ntest tests::hold_tail_order_changes_combo_score ... ok\ntest tests::filters_and_random_counts ... ok\ntest tests::explicit_perfect_protects_notes_from_later_rules_and_goals ... ok\ntest tests::explicit_rules_override_goals_and_reject_invalid ... ok\ntest tests::early_late_good_and_mixed_goals ... ok\ntest tests::goals_use_judgments_and_respect_flick_drag ... ok\n\ntest result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s"
+    },
+    {
+      "name": "path_scope",
+      "result": "running 2 tests\ntest tests::local_child ... ok\ntest tests::reject_parent_and_sibling ... ok\n\ntest result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+    },
+    {
+      "name": "fresh-JVM-production-JNI",
+      "result": "PASS; reproduced red before fix, green after fix"
+    }
+  ],
+  "new_regressions": [
+    "custom_ap175_test: four note kinds, late frames, Hold continuation, clock restore, pause/blocked guards",
+    "dense_lookup175_test: reproduced stale plan before fix; changed buffer resets plan; all 20000 identifiers"
+  ],
+  "all_passed": true,
+  "android_device_tested": false
+}

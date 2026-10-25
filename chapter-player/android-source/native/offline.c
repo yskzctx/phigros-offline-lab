@@ -33,7 +33,7 @@ static atomic_int status_final,status_actual_score,status_actual_accuracy;
 static atomic_int status_actual_perfect,status_actual_good,status_actual_bad,status_actual_miss,status_actual_combo;
 static atomic_int status_actual_early,status_actual_late;
 static atomic_uint config_revision=1;
-static void *plan_score,*plan_list;
+static void *plan_score,*plan_list,*plan_array;
 static int plan_size,plan_last_count=-1;
 static unsigned char selected[MAX_NOTES+1],consumed[MAX_NOTES+1];
 static unsigned char note_types[MAX_NOTES+1];
@@ -41,6 +41,23 @@ static PlanTiming note_timing[MAX_NOTES+1];
 static uint32_t chart_seed=0x179af31bu;
 static uint32_t chart_plan_seed;
 static uintptr_t image;
+#define ORDINAL_SLOTS 65536u
+static uint32_t ordinal_keys[ORDINAL_SLOTS];
+static int ordinal_values[ORDINAL_SLOTS];
+static uint32_t ordinal_key(float code){uint32_t key;if(code==0.f)code=0.f;memcpy(&key,&code,4);return key;}
+static uint32_t ordinal_slot(uint32_t key){key^=key>>16;key*=0x7feb352du;key^=key>>15;key*=0x846ca68bu;key^=key>>16;return key&(ORDINAL_SLOTS-1);}
+static void cache_ordinal(float code,int position){
+    if(isnan(code))return;
+    uint32_t key=ordinal_key(code),slot=ordinal_slot(key);
+    while(ordinal_values[slot]){if(ordinal_keys[slot]==key)return;slot=(slot+1)&(ORDINAL_SLOTS-1);}
+    ordinal_keys[slot]=key;ordinal_values[slot]=position;
+}
+static int cached_ordinal(float code){
+    if(isnan(code))return 0;
+    uint32_t key=ordinal_key(code),slot=ordinal_slot(key);
+    while(ordinal_values[slot]){if(ordinal_keys[slot]==key)return ordinal_values[slot];slot=(slot+1)&(ORDINAL_SLOTS-1);}
+    return 0;
+}
 typedef bool (*judge_fn)(void *,const void *);
 typedef void (*record_fn)(void *,void *,void *,void *,const void *);
 static judge_fn click_original, drag_original, flick_original, hold_original;
@@ -76,13 +93,15 @@ static int ordinal(void *score,float code) {
     void *array=pointer(list,0x10);
     if(!array || n<1 || n>MAX_NOTES || *(size_t *)((char *)array+0x18)<(size_t)n)return 0;
     int count=judged_count(score);
-    if(plan_score!=score || plan_list!=list || plan_size!=n || count<plan_last_count) {
+    if(plan_score!=score || plan_list!=list || plan_array!=array || plan_size!=n || count<plan_last_count) {
         pthread_mutex_lock(&config_lock);chart_config=pending_config;pthread_mutex_unlock(&config_lock);
-        plan_score=score;plan_list=list;plan_size=n;
+        plan_score=score;plan_list=list;plan_array=array;plan_size=n;
+        memset(ordinal_values,0,sizeof(ordinal_values));
         memset(consumed,0,(size_t)n+1);
         PlanEstimate predicted;
         for(int k=0;k<n;k++){
             void *note=pointer(array,0x20+(size_t)k*sizeof(void *));
+            if(note)cache_ordinal(*number(note,0x38),k+1);
             int type=note?*integer(note,0x10):0;
             note_types[k+1]=(unsigned char)(type>=1&&type<=4?type:0);
             float start=note?*number(note,0x2c):0.f;
@@ -106,11 +125,7 @@ static int ordinal(void *score,float code) {
         __android_log_print(ANDROID_LOG_INFO,"PhigrosOffline","control.chart notes=%d planned=%d mode=%d target=%d estimate=%d acc=%d M=%d G=%d B=%d rules=%d already_judged=%d",n,planned,chart_config.mode,chart_config.target,predicted.score,predicted.accuracy,predicted.miss,predicted.good,predicted.bad,chart_config.rule_count,count);
     }
     plan_last_count=count;
-    for(int i=0;i<n;i++) {
-        void *note=pointer(array,0x20+(size_t)i*sizeof(void *));
-        if(note && *number(note,0x38)==code)return i+1;
-    }
-    return 0;
+    return cached_ordinal(code);
 }
 static void mark_hit(int i,int judgment) {
     if(i && selected[i]==judgment && !consumed[i]) {
