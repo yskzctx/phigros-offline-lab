@@ -1,0 +1,32 @@
+{
+  "artifact": "Phigros-4.0.1-157-offline-arm64-controls-v177-COMBINED-CANDIDATE.apk",
+  "sha256": "edec4ce3f4ca761085d2a9fe745ac47082e5bbf1f2a51e39d001a7b966643ded",
+  "bytes": 3345464453,
+  "version_code": 177,
+  "source_apk_version": 176,
+  "host_tests": {
+    "native_dispatch": true,
+    "real_touch_blocking_on_off_and_unconsumed_fallback": true,
+    "goal_guard": true,
+    "incremental_catalog_merge": true,
+    "rks_planner": true,
+    "controls_rules": true,
+    "controls_modes": true
+  },
+  "apk_checks": {
+    "signature_v2_v3": true,
+    "alignment_16k": true,
+    "zip_crc": true,
+    "no_internet_permission": true,
+    "game_native_and_resources_preserved": true,
+    "preserved_entries": 3031,
+    "single_resource_storage_fix_preserved": true
+  },
+  "unsupported": {
+    "phigros_4012_profile_adapted": false,
+    "reason": "Phigros 4.0.1.2 APK and ELF were not available for audit"
+  },
+  "device_tested": false,
+  "installed": false,
+  "published": false
+}

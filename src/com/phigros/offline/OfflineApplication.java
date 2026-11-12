@@ -11,10 +11,16 @@ public final class OfflineApplication extends Application {
     @Override protected void attachBaseContext(Context context) {
         super.attachBaseContext(context);
         Log.i("PhigrosOffline", "app.attach; preparing independent preferences");
+        // This bootstrap is only for the independent strict-offline APK.
+        // Module adapters do not install it in either original game process.
+        try {OfflineHttp.install();}
+        catch(Error error){Log.w("PhigrosOffline","HTTP factory unavailable; Android INTERNET permission remains absent",error);}
+        System.loadLibrary("phigros_privacy");
         OfflineAssets.initialize(this);
         // Restore before Unity or SDK content providers can cache the preferences.
         try { LaunchActivity.prepareInitialData(this); }
         catch (Throwable error) { Log.e("PhigrosOffline", "Initial data setup failed", error); }
+        SkinController.initialize(this);
     }
 
     @Override public void onCreate() {

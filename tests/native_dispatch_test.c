@@ -19,6 +19,10 @@ static void setup(ControlConfig c){
 }
 static void play(void){for(int i=1;i<=300;i++)perfect(score_obj,(float)i,0,(Vec3){1,2,3},true,NULL);}
 static bool untouched_judge(void *s,const void *m){(void)m;void *note=pointer(s,0x40),*p=pointer(s,0x28);assert(!*byte(note,0x28));assert(*number(p,0x90)==2.f);miss(pointer(s,0x20),*number(note,0x38),NULL);return false;}
+static int real_touch_calls;
+static bool consume_real_touch(void *s,const void *m){(void)m;real_touch_calls++;void *score=pointer(s,0x20);(*integer(score,0x58))++;combo(score);return true;}
+static bool synthesize_touch(void *s,const void *m){(void)m;void *score=pointer(s,0x20);(*integer(score,0x58))++;combo(score);return true;}
+static bool decline_then_synthesize(void *s,const void *m){(void)m;if(real_touch_calls++==0)return false;void *score=pointer(s,0x20);(*integer(score,0x58))++;combo(score);return true;}
 int main(void){
  ControlConfig c={.target=1000000,.accuracy=10000,.rule_count=2};c.rules[0]=(NoteRule){.judgment=1,.position=1,.start=100,.end=100,.count=1};c.rules[1]=(NoteRule){.judgment=2,.position=1,.start=50,.end=50,.count=1};setup(c);play();assert(*integer(score_obj,0x64)==1&&*integer(score_obj,0x5c)==1&&*integer(score_obj,0x58)==298);assert(atomic_load(&status_hit)==2);assert(last_position.x==1&&last_position.y==2&&last_position.z==3&&last_hold);
  c=(ControlConfig){.mode=1,.target=900000,.accuracy=10000};setup(c);play();int expected=atomic_load(&status_score);void *r=result(score_obj,NULL);assert(*integer(r,0x10)==expected&&abs(expected-900000)<=1600);assert(*integer(score_obj,0x64)+*integer(score_obj,0x5c)>0);assert(plan_score==NULL);
@@ -27,5 +31,11 @@ int main(void){
  automatic(control,NULL,untouched_judge,0);assert(*integer(score_obj,0x64)==1&&atomic_load(&status_hit)==1); // real input flags and clock preserved for Miss
  setup(c);perfect(score_obj,1,0,(Vec3){0,0,0},false,NULL);pending_config.rules[0].judgment=2;pending_config.rules[0].start=50;play();assert(*integer(score_obj,0x5c)==0); // chart config frozen
  setup(c);atomic_store(&enabled,false);play();assert(*integer(score_obj,0x58)==300&&*integer(score_obj,0x64)==0);
- puts("PASS native dispatcher: simultaneous rules, natural missed input, score/accuracy via judgments, result not overwritten, disabled mode, config snapshot");
+  c=(ControlConfig){.target=1000000,.accuracy=10000,.block_touch=0};setup(c);chart_config=c;*(void **)(control+0x20)=score_obj;*(void **)(control+0x28)=progress;*(void **)(control+0x40)=notes[0];*byte(progress,0x8a)=1;*number(progress,0x90)=1.f;*byte(notes[0],0x28)=1;real_touch_calls=0;
+  assert(automatic(control,NULL,consume_real_touch,0)&&real_touch_calls==1&&*integer(score_obj,0x58)==1); // real touch remains authoritative when blocking is off
+  c.block_touch=1;setup(c);chart_config=c;*(void **)(control+0x20)=score_obj;*(void **)(control+0x28)=progress;*(void **)(control+0x40)=notes[0];*byte(progress,0x8a)=1;*number(progress,0x90)=1.f;*byte(notes[0],0x28)=1;real_touch_calls=0;
+  assert(automatic(control,NULL,synthesize_touch,0)&&*integer(score_obj,0x58)==1); // blocking hides real input and synthesizes the planned hit
+  c.block_touch=0;setup(c);chart_config=c;*(void **)(control+0x20)=score_obj;*(void **)(control+0x28)=progress;*(void **)(control+0x40)=notes[0];*byte(progress,0x8a)=1;*number(progress,0x90)=1.f;*byte(notes[0],0x28)=1;real_touch_calls=0;
+  assert(automatic(control,NULL,decline_then_synthesize,0)&&real_touch_calls==2&&*integer(score_obj,0x58)==1); // synthetic input fills only an unconsumed real touch
+  puts("PASS native dispatcher: simultaneous rules, natural missed input, score/accuracy via judgments, result not overwritten, disabled mode, config snapshot, real-touch blocking on/off and unconsumed fallback");
 }

@@ -63,6 +63,30 @@ public final class RksEditor {
         return out.toString();
     }
     private static Map<String,String> entries(String raw){Map<String,String> result=new HashMap<String,String>();Matcher m=ENTRY.matcher(raw);while(m.find())result.put(m.group(1),m.group(2));return result;}
+    static String mergeMissingCatalogEntries(String current,String seed)throws IOException {
+        return CatalogXmlMerge.mergeMissing(current,seed);
+    }
+    static void mergeAllAPAsset(Context context,File target)throws IOException {
+        String seed;
+        try(InputStream in=context.getAssets().open("offline/all-ap.xml")){
+            ByteArrayOutputStream out=new ByteArrayOutputStream();
+            byte[] buffer=new byte[65536];int count;
+            while((count=in.read(buffer))!=-1)out.write(buffer,0,count);
+            seed=new String(out.toByteArray(),StandardCharsets.UTF_8);
+        }
+        if(!target.isFile()||target.length()==0) {
+            try(InputStream in=new ByteArrayInputStream(seed.getBytes(StandardCharsets.UTF_8))){
+                LaunchActivity.copyAtomic(in,target);
+            }
+            return;
+        }
+        String current=read(target),merged=mergeMissingCatalogEntries(current,seed);
+        if(merged.equals(current))return;
+        try(InputStream in=new ByteArrayInputStream(merged.getBytes(StandardCharsets.UTF_8))){
+            LaunchActivity.copyAtomic(in,target);
+        }
+        Log.i("PhigrosOffline","all-ap.catalogue.merged count="+(entries(merged).size()-entries(current).size()));
+    }
     private static String seedData(String raw)throws Exception {
         Map<String,String> saved=entries(raw),changes=new HashMap<String,String>();long amount=0,factor=1;
         for(int i=0;i<5;i++){String key=encrypt("NumOfMoney"+i),value=saved.get(key);if(value==null)throw new IOException("本地 Data 字段缺失");int part=Integer.parseInt(decrypt(value));if(part<0)throw new IOException("本地 Data 数量异常");amount=Math.addExact(amount,Math.multiplyExact((long)part,factor));factor=Math.multiplyExact(factor,1024);}

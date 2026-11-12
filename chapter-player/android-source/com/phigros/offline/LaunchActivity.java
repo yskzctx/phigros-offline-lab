@@ -79,17 +79,14 @@ public final class LaunchActivity extends Activity {
             }
             if (!pending.delete()) throw new IOException("无法恢复自动游玩会话");
         }
-        File seeded = new File(state, "all-ap-v157.seeded");
-        if (!seeded.exists()) {
-            for (String name : prefNames(context)) {
-                try (InputStream in = context.getAssets().open("offline/all-ap.xml")) {
-                    copyAtomic(in, new File(prefs, name));
-                }
-            }
-            try (FileOutputStream out = new FileOutputStream(seeded)) {
-                out.write(1); out.getFD().sync();
-            }
+        // Merge the bundled catalogue on every cold start. Existing player
+        // records are preserved; only records introduced by a newer chart
+        // catalogue are appended. The old one-shot marker prevented newly
+        // shipped charts from receiving their local baseline records.
+        for (String name : prefNames(context)) {
+            RksEditor.mergeAllAPAsset(context, new File(prefs, name));
         }
+        new File(state, "all-ap-v157.seeded").delete();
         RksEditor.applyPending(context);
     }
 
@@ -131,7 +128,7 @@ public final class LaunchActivity extends Activity {
         if (enabled) {
             Log.i("PhigrosOffline", "native.load.begin; mode=enabled");
             if(!nativeLoaded) {System.loadLibrary("phigros_offline");nativeLoaded=true;}
-            NativeControls.apply(NativeControls.load(context));
+            NativeControls.apply(NativeControls.load(context),NativeControls.blockTouch(context),NativeControls.assistGuard(context),NativeControls.guardScore(context));
             setAutoplay(true);
             Log.i("PhigrosOffline", "native.mode.enabled");
         } else {

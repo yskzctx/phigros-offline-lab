@@ -29,12 +29,35 @@ static ControlConfig pending_config={.target=1000000,.accuracy=10000};
 static ControlConfig chart_config;
 static atomic_int status_total,status_planned,status_hit;
 static atomic_int status_score,status_accuracy,status_miss,status_good,status_bad;
+static atomic_int status_final,status_actual_score,status_actual_accuracy;
+static atomic_int status_actual_perfect,status_actual_good,status_actual_bad,status_actual_miss,status_actual_combo;
+static atomic_int status_actual_early,status_actual_late;
 static atomic_uint config_revision=1;
-static void *plan_score,*plan_list;
+static void *plan_score,*plan_list,*plan_array;
 static int plan_size,plan_last_count=-1;
 static unsigned char selected[MAX_NOTES+1],consumed[MAX_NOTES+1];
+static unsigned char note_types[MAX_NOTES+1];
+static PlanTiming note_timing[MAX_NOTES+1];
 static uint32_t chart_seed=0x179af31bu;
+static uint32_t chart_plan_seed;
 static uintptr_t image;
+#define ORDINAL_SLOTS 65536u
+static uint32_t ordinal_keys[ORDINAL_SLOTS];
+static int ordinal_values[ORDINAL_SLOTS];
+static uint32_t ordinal_key(float code){uint32_t key;if(code==0.f)code=0.f;memcpy(&key,&code,4);return key;}
+static uint32_t ordinal_slot(uint32_t key){key^=key>>16;key*=0x7feb352du;key^=key>>15;key*=0x846ca68bu;key^=key>>16;return key&(ORDINAL_SLOTS-1);}
+static void cache_ordinal(float code,int position){
+    if(isnan(code))return;
+    uint32_t key=ordinal_key(code),slot=ordinal_slot(key);
+    while(ordinal_values[slot]){if(ordinal_keys[slot]==key)return;slot=(slot+1)&(ORDINAL_SLOTS-1);}
+    ordinal_keys[slot]=key;ordinal_values[slot]=position;
+}
+static int cached_ordinal(float code){
+    if(isnan(code))return 0;
+    uint32_t key=ordinal_key(code),slot=ordinal_slot(key);
+    while(ordinal_values[slot]){if(ordinal_keys[slot]==key)return ordinal_values[slot];slot=(slot+1)&(ORDINAL_SLOTS-1);}
+    return 0;
+}
 typedef bool (*judge_fn)(void *,const void *);
 typedef void (*record_fn)(void *,void *,void *,void *,const void *);
 static judge_fn click_original, drag_original, flick_original, hold_original;
@@ -47,6 +70,9 @@ static result_fn result_original;
 static perfect_fn good_call;
 static void (*miss_original)(void *,float,const void *);
 static void (*bad_call)(void *,float,float,const void *);
+// Only active while one non-Tap original Judge executes its unhit cleanup.
+static _Thread_local void *early_bad_score;
+static _Thread_local float early_bad_code,early_bad_delay;
 
 static inline void *pointer(void *object,size_t offset) {
     return *(void **)((char *)object+offset);
@@ -67,23 +93,39 @@ static int ordinal(void *score,float code) {
     void *array=pointer(list,0x10);
     if(!array || n<1 || n>MAX_NOTES || *(size_t *)((char *)array+0x18)<(size_t)n)return 0;
     int count=judged_count(score);
-    if(plan_score!=score || plan_list!=list || plan_size!=n || count<plan_last_count) {
+    if(plan_score!=score || plan_list!=list || plan_array!=array || plan_size!=n || count<plan_last_count) {
         pthread_mutex_lock(&config_lock);chart_config=pending_config;pthread_mutex_unlock(&config_lock);
-        plan_score=score;plan_list=list;plan_size=n;
+        plan_score=score;plan_list=list;plan_array=array;plan_size=n;
+        memset(ordinal_values,0,sizeof(ordinal_values));
         memset(consumed,0,(size_t)n+1);
         PlanEstimate predicted;
-        int planned=make_profile(&chart_config,n,plan_random(&chart_seed),selected,&predicted);
+        for(int k=0;k<n;k++){
+            void *note=pointer(array,0x20+(size_t)k*sizeof(void *));
+            if(note)cache_ordinal(*number(note,0x38),k+1);
+            int type=note?*integer(note,0x10):0;
+            note_types[k+1]=(unsigned char)(type>=1&&type<=4?type:0);
+            float start=note?*number(note,0x2c):0.f;
+            note_timing[k+1]=(PlanTiming){start,start+(type==3?*number(note,0x1c):0.f)};
+        }
+        float good_delay=0.13f,miss_delay=0.18f;
+        void *progress=pointer(score,0x90),*judge=progress?pointer(progress,0x30):NULL;
+        void *klass=judge?pointer(judge,0):NULL,*fields=klass?pointer(klass,0xb8):NULL;
+        if(fields){float p=*number(fields,4),g=*number(fields,8);if(p>0.f&&g>p&&g<1.f){good_delay=(p+g)*0.5f;miss_delay=g;}}
+        chart_plan_seed=plan_random(&chart_seed);if(!chart_plan_seed)chart_plan_seed=1;
+        float bad_limit=fields?*number(fields,12):.22f;
+        if(!(bad_limit>miss_delay&&bad_limit<1.f))bad_limit=.22f;
+        PlanTimeline timeline=plan_timeline_windows(note_timing,note_types,n,good_delay,miss_delay,(miss_delay+bad_limit)*.5f,chart_plan_seed);
+        timeline.challenge=fields&&*byte(fields,0);
+        timeline.denominator=*integer(level,0x2c)>0?*integer(level,0x2c):n;
+        int planned=make_profile_timed(&chart_config,n,chart_plan_seed,selected,&predicted,note_types,&timeline);
+        free(timeline.events);atomic_store(&status_final,0);
         atomic_store(&status_total,n);atomic_store(&status_planned,planned);atomic_store(&status_hit,0);
         atomic_store(&status_score,predicted.score);atomic_store(&status_accuracy,predicted.accuracy);
         atomic_store(&status_miss,predicted.miss);atomic_store(&status_good,predicted.good);atomic_store(&status_bad,predicted.bad);
         __android_log_print(ANDROID_LOG_INFO,"PhigrosOffline","control.chart notes=%d planned=%d mode=%d target=%d estimate=%d acc=%d M=%d G=%d B=%d rules=%d already_judged=%d",n,planned,chart_config.mode,chart_config.target,predicted.score,predicted.accuracy,predicted.miss,predicted.good,predicted.bad,chart_config.rule_count,count);
     }
     plan_last_count=count;
-    for(int i=0;i<n;i++) {
-        void *note=pointer(array,0x20+(size_t)i*sizeof(void *));
-        if(note && *number(note,0x38)==code)return i+1;
-    }
-    return 0;
+    return cached_ordinal(code);
 }
 static void mark_hit(int i,int judgment) {
     if(i && selected[i]==judgment && !consumed[i]) {
@@ -92,8 +134,16 @@ static void mark_hit(int i,int judgment) {
     }
 }
 static void miss(void *score,float code,const void *method) {
+    if(score==early_bad_score&&code==early_bad_code){
+        int i=ordinal(score,code);
+        if(i&&selected[i]==3&&!consumed[i]){mark_hit(i,3);bad_call(score,code,early_bad_delay,method);return;}
+    }
     if(atomic_load(&ready)&&atomic_load(&enabled)&&score)mark_hit(ordinal(score,code),1);
     miss_original(score,code,method);
+}
+static void good(void *score,float code,float time,Vec3 position,bool is_hold,const void *method) {
+    if(atomic_load(&ready)&&atomic_load(&enabled)&&score){int i=ordinal(score,code);if(i&&plan_is_good(selected[i]))mark_hit(i,selected[i]);}
+    good_call(score,code,time,position,is_hold,method);
 }
 static void perfect(void *score,float code,float time,Vec3 position,bool is_hold,const void *method) {
     if(!atomic_load(&ready) || !atomic_load(&enabled) || !score) {
@@ -104,8 +154,8 @@ static void perfect(void *score,float code,float time,Vec3 position,bool is_hold
         int judgment=selected[i];mark_hit(i,judgment);
         if(judgment==1) {
             miss_original(score,code,NULL);
-        } else if(judgment==2) {
-            good_call(score,code,0.08f,position,is_hold,NULL);
+        } else if(plan_is_good(judgment)) {
+            good_call(score,code,plan_good_early(judgment,i,chart_plan_seed)?-0.13f:0.13f,position,is_hold,NULL);
         } else {
             bad_call(score,code,0.15f,NULL);
         }
@@ -116,6 +166,14 @@ static void perfect(void *score,float code,float time,Vec3 position,bool is_hold
 static void *result(void *score,const void *method) {
     void *out=result_original(score,method);
     if(out && score==plan_score && atomic_load(&enabled) && atomic_load(&ready)) {
+        // Read the game's real result. Never replace its score or judgments.
+        atomic_store(&status_actual_score,*integer(out,0x10));
+        atomic_store(&status_actual_accuracy,(int)(*number(out,0x18)*100.f+0.5f));
+        atomic_store(&status_actual_perfect,*integer(out,0x1c));atomic_store(&status_actual_good,*integer(out,0x20));
+        atomic_store(&status_actual_bad,*integer(out,0x24));atomic_store(&status_actual_miss,*integer(out,0x28));
+        atomic_store(&status_actual_combo,*integer(out,0x34));
+        atomic_store(&status_actual_early,*integer(out,0x2c));atomic_store(&status_actual_late,*integer(out,0x30));
+        atomic_store(&status_final,1);
         __android_log_print(ANDROID_LOG_INFO,"PhigrosOffline","control.result score=%d percent=%.4f P=%d G=%d B=%d M=%d planned=%d executed=%d",*integer(out,0x10),*number(out,0x18),*integer(out,0x1c),*integer(out,0x20),*integer(out,0x24),*integer(out,0x28),atomic_load(&status_planned),atomic_load(&status_hit));
         plan_score=NULL;
     }
@@ -131,13 +189,57 @@ static bool automatic(void *self, const void *method, judge_fn original, int typ
     // Paused / blocked story transitions must keep their original logic.
     if ((judge && *byte(judge,0x88)) || !*byte(progress,0x8a)) return false;
     float time=*number(progress,0x90), due=*number(note,0x2c);
-    if (time < due) return false;
     void *score=pointer(self,0x20);
     int i=score?ordinal(score,*number(note,0x38)):0;
+    // With blocking off, preserve a real touch that already selected this note.
+    // Synthetic input is only used when the original control did not consume it.
+    if(!chart_config.block_touch&&(*byte(note,0x28)||*byte(note,0x29)||*byte(self,0x60))){
+        bool real=original(self,method);if(real)return true;
+    }
     // A planned Miss must visibly follow the game's unhit-note timeout path.
     // Do not set synthetic input, isJudged, flick or hold grace flags for it.
-    if(i && selected[i]==1)return original(self,method);
+    if(i && selected[i]==1)return time<due?false:original(self,method);
     bool starting=type!=3 || !*byte(self,0x8e);
+    if(starting&&i&&selected[i]==3){
+        void *klass=judge?pointer(judge,0):NULL;
+        void *fields=klass?pointer(klass,0xb8):NULL;
+        float g=fields?*number(fields,8):.18f,b=fields?*number(fields,12):.22f;
+        if(!(g>0.f&&b>g&&b<1.f)){g=.18f;b=.22f;}
+        float delay=-(g+b)*.5f;
+        if(time<due+delay)return false;
+        // ClickControl.Judge 0x1d8242c takes the real early-Bad branch:
+        // no normal hit sound; its original Bad object stays at note height.
+        if(type==0){
+            *byte(note,0x28)=1;*number(progress,0x90)=due+delay;
+            bool done=original(self,method);*number(progress,0x90)=time;
+            if(done)mark_hit(i,3);
+            return done;
+        }
+        // Drag/Flick/Hold have no native early-Bad branch. Preserve the user's
+        // opt-in forced Bad, using each original unhit-note cleanup (no hit
+        // sound/Perfect effect), and substitute only its scoped score callback.
+        early_bad_score=score;early_bad_code=*number(note,0x38);early_bad_delay=delay;
+        float cleanup_after=2.f;
+        if(type==3){float length=*number(note,0x1c);if(isfinite(length)&&length>0.f)cleanup_after=fmaxf(cleanup_after,length+.5f);}
+        // HoldControl only returns its object after head + holdTime + .25s.
+        *number(progress,0x90)=due+cleanup_after;
+        bool done=original(self,method);
+        *number(progress,0x90)=time;early_bad_score=NULL;return done;
+    }
+    // Tap/Hold can naturally enter Good. Delay their initial synthetic contact;
+    // keep Drag/Flick's original timing and forced rule semantics unchanged.
+    float head_time=due;
+    if(starting&&i&&plan_is_good(selected[i])&&(type==0||type==3)){
+        float delay=0.13f;
+        // HoldControl.Judge (157) reads JudgeControl static_fields at class+0xb8,
+        // PerfectTimeRange+4 and GoodTimeRange+8. The midpoint avoids float
+        // boundary rounding and respects the tighter challenge-mode windows.
+        void *klass=judge?pointer(judge,0):NULL;
+        void *fields=klass?pointer(klass,0xb8):NULL;
+        if(fields){float p=*number(fields,4),g=*number(fields,8);if(p>0.f&&g>p&&g<1.f)delay=(p+g)*0.5f;}
+        head_time+=plan_good_early(selected[i],i,chart_plan_seed)?-delay:delay;
+    }
+    if(starting&&time<head_time)return false;
     if (type==0 || type==3) *byte(note,0x28)=1;
     if (type==1) *byte(self,0x60)=1;
     if (type==2) { *byte(note,0x29)=1; *byte(self,0x60)=1; }
@@ -147,7 +249,7 @@ static bool automatic(void *self, const void *method, judge_fn original, int typ
         *(int *)((char *)self+0xb4)=2;
         *byte(self,0x8d)=0;
     }
-    if (starting) *number(progress,0x90)=due;
+    if (starting) *number(progress,0x90)=head_time;
     bool result=original(self,method);
     if (starting) *number(progress,0x90)=time;
     return result;
@@ -215,10 +317,9 @@ static void *worker(void *unused) {
         __android_log_print(ANDROID_LOG_ERROR,"PhigrosOffline","Client version mismatch; autoplay disabled");
         atomic_store(&enabled,false);return NULL;
     }
-    good_call=(perfect_fn)(image+0x1d876b8);
     bad_call=(void (*)(void *,float,float,const void *))(image+0x1d875c4);
-    void *replacements[]={(void *)click,(void *)drag,(void *)flick,(void *)hold,(void *)record,(void *)perfect,(void *)result,(void *)miss};
-    void **originals[]={(void **)&click_original,(void **)&drag_original,(void **)&flick_original,(void **)&hold_original,(void **)&record_original,(void **)&perfect_original,(void **)&result_original,(void **)&miss_original};
+    void *replacements[]={(void *)click,(void *)drag,(void *)flick,(void *)hold,(void *)record,(void *)perfect,(void *)result,(void *)miss,(void *)good};
+    void **originals[]={(void **)&click_original,(void **)&drag_original,(void **)&flick_original,(void **)&hold_original,(void **)&record_original,(void **)&perfect_original,(void **)&result_original,(void **)&miss_original,(void **)&good_call};
     for (size_t i=0;i<sizeof(replacements)/sizeof(replacements[0]);i++) if (install(&hooks[i],replacements[i],originals[i])) {
         atomic_store(&enabled,false);
         __android_log_print(ANDROID_LOG_ERROR,"PhigrosOffline","Autoplay hook installation failed: %zu",i);
@@ -233,20 +334,23 @@ JNIEXPORT void JNICALL Java_com_phigros_offline_LaunchActivity_setAutoplay(JNIEn
     if(value==JNI_TRUE)atomic_store(&session_dirty,true);
     atomic_store(&enabled,value==JNI_TRUE);
 }
-JNIEXPORT jboolean JNICALL Java_com_phigros_offline_NativeControls_configure(JNIEnv *env,jclass cls,jint mode,jint target,jint accuracy,jintArray words) {
+JNIEXPORT jboolean JNICALL Java_com_phigros_offline_NativeControls_configure(JNIEnv *env,jclass cls,jint mode,jint target,jint accuracy,jboolean block_touch,jint assist_guard,jint guard_score,jintArray words) {
     (void)cls;
-    if(mode<0||mode>2||target<0||target>1000000||accuracy<0||accuracy>10000||!words)return JNI_FALSE;
+    if(mode<0||mode>2||target<0||target>1000000||accuracy<0||accuracy>10000||assist_guard<0||assist_guard>3||guard_score<0||guard_score>1000000||!words)return JNI_FALSE;
     int length=(*env)->GetArrayLength(env,words);
     if(length<1||length>MAX_CONFIG_WORDS)return JNI_FALSE;
     jint packed[MAX_CONFIG_WORDS];(*env)->GetIntArrayRegion(env,words,0,length,packed);
     if((*env)->ExceptionCheck(env))return JNI_FALSE;
-    ControlConfig c={.mode=mode,.target=target,.accuracy=accuracy,.rule_count=packed[0]};
+    bool typed=packed[0]==-168;
+    if(typed&&length<2)return JNI_FALSE;
+    ControlConfig c={.mode=mode,.target=target,.accuracy=accuracy,.block_touch=block_touch==JNI_TRUE,.assist_guard=assist_guard,.guard_score=guard_score,.rule_count=packed[typed?1:0]};
     if(c.rule_count<0||c.rule_count>MAX_RULES)return JNI_FALSE;
-    int cursor=1;
+    int cursor=typed?2:1;
     for(int i=0;i<c.rule_count;i++){
-        if(cursor+6>length)return JNI_FALSE;
-        NoteRule *r=&c.rules[i];r->judgment=packed[cursor++];r->position=packed[cursor++];r->start=packed[cursor++];r->end=packed[cursor++];r->count=packed[cursor++];r->length=packed[cursor++];
-        if(r->judgment<1||r->judgment>3||r->position<1||r->position>6||r->start<1||r->start>MAX_NOTES||r->end<1||r->end>MAX_NOTES||r->count<1||r->count>MAX_NOTES||r->length<0||r->length>MAX_INDICES||cursor+r->length>length||(r->position==2&&r->end<r->start)||(r->position==3&&r->length==0))return JNI_FALSE;
+        if(cursor+(typed?7:6)>length)return JNI_FALSE;
+        NoteRule *r=&c.rules[i];r->judgment=packed[cursor++];r->position=packed[cursor++];r->start=packed[cursor++];r->end=packed[cursor++];r->count=packed[cursor++];if(typed)r->note_type=packed[cursor++];r->length=packed[cursor++];
+        if(r->note_type<0||r->note_type>4)return JNI_FALSE;
+        if(r->judgment<0||r->judgment>5||r->position<1||r->position>6||r->start<1||r->start>MAX_NOTES||r->end<1||r->end>MAX_NOTES||r->count<1||r->count>MAX_NOTES||r->length<0||r->length>MAX_INDICES||cursor+r->length>length||(r->position==2&&r->end<r->start)||(r->position==3&&r->length==0))return JNI_FALSE;
         for(int k=0;k<r->length;k++){int v=packed[cursor++];if(v<1||v>MAX_NOTES)return JNI_FALSE;r->indices[k]=v;}
     }
     if(cursor!=length)return JNI_FALSE;
@@ -255,9 +359,9 @@ JNIEXPORT jboolean JNICALL Java_com_phigros_offline_NativeControls_configure(JNI
 }
 JNIEXPORT jintArray JNICALL Java_com_phigros_offline_NativeControls_status(JNIEnv *env,jclass cls) {
     (void)cls;
-    jint values[]={atomic_load(&ready),atomic_load(&enabled),atomic_load(&status_total),atomic_load(&status_planned),atomic_load(&status_hit),(jint)atomic_load(&config_revision),atomic_load(&status_score),atomic_load(&status_accuracy),atomic_load(&status_miss),atomic_load(&status_good),atomic_load(&status_bad)};
-    jintArray out=(*env)->NewIntArray(env,11);
-    if(out)(*env)->SetIntArrayRegion(env,out,0,11,values);return out;
+    jint values[]={atomic_load(&ready),atomic_load(&enabled),atomic_load(&status_total),atomic_load(&status_planned),atomic_load(&status_hit),(jint)atomic_load(&config_revision),atomic_load(&status_score),atomic_load(&status_accuracy),atomic_load(&status_miss),atomic_load(&status_good),atomic_load(&status_bad),atomic_load(&status_final),atomic_load(&status_actual_score),atomic_load(&status_actual_accuracy),atomic_load(&status_actual_perfect),atomic_load(&status_actual_good),atomic_load(&status_actual_bad),atomic_load(&status_actual_miss),atomic_load(&status_actual_combo),atomic_load(&status_actual_early),atomic_load(&status_actual_late)};
+    jintArray out=(*env)->NewIntArray(env,21);
+    if(out)(*env)->SetIntArrayRegion(env,out,0,21,values);return out;
 }
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm,void *reserved) {
     (void)vm;(void)reserved;

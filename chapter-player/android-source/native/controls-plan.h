@@ -9,7 +9,11 @@
 #define MAX_RULES 16
 #define MAX_CONFIG_WORDS (2+MAX_RULES*(7+MAX_INDICES))
 typedef struct {int judgment,position,start,end,count,length,note_type;int indices[MAX_INDICES];} NoteRule;
-typedef struct {int mode,target,accuracy,rule_count;NoteRule rules[MAX_RULES];} ControlConfig;
+typedef struct {
+    int mode,target,accuracy,rule_count;
+    int block_touch,assist_guard,guard_score;
+    NoteRule rules[MAX_RULES];
+} ControlConfig;
 typedef struct {int score,accuracy,perfect,good,bad,miss,max_combo;} PlanEstimate;
 typedef struct {float start,end;} PlanTiming;
 typedef struct {float time;int note,judgment;} PlanEvent;
@@ -74,6 +78,58 @@ static inline void estimate_timed(const unsigned char *plan,int n,PlanEstimate *
     e->accuracy=(int)(10000.f*percent+0.5f);
     e->score=(int)((timeline->challenge?1000000.f:900000.f)*percent+(timeline->challenge?0.f:100000.f*(float)e->max_combo/(float)denominator)+0.5f);
 }
+static inline int assist_rescue_chance(int score_gap,int accuracy_gap){
+    if(score_gap<0)score_gap=-score_gap;
+    if(accuracy_gap<0)accuracy_gap=-accuracy_gap;
+    long long a=(long long)score_gap*100/1000000;
+    long long b=(long long)accuracy_gap*100/10000;
+    long long c=a>b?a:b;if(c>100)c=100;return (int)c;
+}
+static inline int assist_score_floor(const ControlConfig *c){
+    int floor=c&&c->guard_score>0?c->guard_score:0;
+    if(c&&c->assist_guard==1&&floor<880000)floor=880000;
+    return floor;
+}
+static inline int assist_guard_satisfied(const ControlConfig *c,const PlanEstimate *e){
+    if(!c||c->assist_guard<0||c->assist_guard>3||!e)return 1;
+    int floor=assist_score_floor(c);
+    if(floor&&e->score<floor)return 0;
+    if(c->assist_guard==2&&(e->bad||e->miss))return 0;
+    if(c->assist_guard==3&&(e->good||e->bad||e->miss))return 0;
+    return 1;
+}
+static inline void apply_assist_guard(const ControlConfig *c,int n,uint32_t *rng,
+        unsigned char *plan,unsigned char *fixed,const PlanTimeline *timeline,PlanEstimate *estimate){
+    if(!c||!rng||!plan||!fixed||!estimate||c->assist_guard<0||c->assist_guard>3)return;
+    int floor=assist_score_floor(c);
+    if(c->assist_guard==0&&floor==0)return;
+    for(int pass=0;pass<n;pass++){
+        PlanEstimate e;estimate_timed(plan,n,&e,timeline);
+        if(assist_guard_satisfied(c,&e)){*estimate=e;return;}
+        int best=0,best_rank=-1;
+        for(int i=1;i<=n;i++){
+            if(fixed[i])continue;
+            int rank=-1;
+            if(c->assist_guard==3){
+                if(plan[i]==1)rank=5;else if(plan[i]==3)rank=4;else if(plan_is_good(plan[i]))rank=3;
+            }else if(c->assist_guard==2){
+                if(plan[i]==1)rank=5;else if(plan[i]==3)rank=4;
+            }else{
+                if(plan[i]==1)rank=5;else if(plan[i]==3)rank=4;else if(plan_is_good(plan[i]))rank=3;
+            }
+            if(rank<0)continue;
+            if(rank>best_rank||(rank==best_rank&&plan_random(rng)%2)){best=i;best_rank=rank;}
+        }
+        if(!best)return;
+        int score_gap=floor?floor-e.score:0;
+        int accuracy_gap=c->assist_guard==2?(e.miss+e.bad)*10000/(n?n:1):c->assist_guard==3?(e.miss+e.bad+e.good)*10000/(n?n:1):0;
+        int chance=assist_rescue_chance(score_gap,accuracy_gap);
+        if(c->assist_guard>=2&&chance<50)chance=50;
+        int perfect=chance>=75||c->assist_guard==3||pass>n/2;
+        plan[best]=(unsigned char)(perfect?0:2);
+    }
+    estimate_timed(plan,n,estimate,timeline);
+}
 static inline int eligible(const NoteRule *r,const unsigned char *types,int i){return r->note_type==0||(types&&types[i]==r->note_type);}
 static inline void apply_rule(const NoteRule *r,int n,uint32_t *rng,unsigned char *plan,unsigned char *fixed,const unsigned char *types){
     if(r->judgment<0||r->judgment>5||r->position<1||r->position>6)return;
@@ -131,6 +187,7 @@ static inline int make_profile_timed(const ControlConfig *c,int n,uint32_t seed,
         }
         memcpy(plan,best,(size_t)n+1);*e=best_e;
     }
+    apply_assist_guard(c,n,&rng,plan,fixed,timeline,e);
     return e->good+e->bad+e->miss;
 }
 static inline int make_profile_typed(const ControlConfig *c,int n,uint32_t seed,unsigned char *plan,PlanEstimate *e,const unsigned char *types){return make_profile_timed(c,n,seed,plan,e,types,NULL);}

@@ -191,6 +191,11 @@ static bool automatic(void *self, const void *method, judge_fn original, int typ
     float time=*number(progress,0x90), due=*number(note,0x2c);
     void *score=pointer(self,0x20);
     int i=score?ordinal(score,*number(note,0x38)):0;
+    // With blocking off, preserve a real touch that already selected this note.
+    // Synthetic input is only used when the original control did not consume it.
+    if(!chart_config.block_touch&&(*byte(note,0x28)||*byte(note,0x29)||*byte(self,0x60))){
+        bool real=original(self,method);if(real)return true;
+    }
     // A planned Miss must visibly follow the game's unhit-note timeout path.
     // Do not set synthetic input, isJudged, flick or hold grace flags for it.
     if(i && selected[i]==1)return time<due?false:original(self,method);
@@ -329,16 +334,16 @@ JNIEXPORT void JNICALL Java_com_phigros_offline_LaunchActivity_setAutoplay(JNIEn
     if(value==JNI_TRUE)atomic_store(&session_dirty,true);
     atomic_store(&enabled,value==JNI_TRUE);
 }
-JNIEXPORT jboolean JNICALL Java_com_phigros_offline_NativeControls_configure(JNIEnv *env,jclass cls,jint mode,jint target,jint accuracy,jintArray words) {
+JNIEXPORT jboolean JNICALL Java_com_phigros_offline_NativeControls_configure(JNIEnv *env,jclass cls,jint mode,jint target,jint accuracy,jboolean block_touch,jint assist_guard,jint guard_score,jintArray words) {
     (void)cls;
-    if(mode<0||mode>2||target<0||target>1000000||accuracy<0||accuracy>10000||!words)return JNI_FALSE;
+    if(mode<0||mode>2||target<0||target>1000000||accuracy<0||accuracy>10000||assist_guard<0||assist_guard>3||guard_score<0||guard_score>1000000||!words)return JNI_FALSE;
     int length=(*env)->GetArrayLength(env,words);
     if(length<1||length>MAX_CONFIG_WORDS)return JNI_FALSE;
     jint packed[MAX_CONFIG_WORDS];(*env)->GetIntArrayRegion(env,words,0,length,packed);
     if((*env)->ExceptionCheck(env))return JNI_FALSE;
     bool typed=packed[0]==-168;
     if(typed&&length<2)return JNI_FALSE;
-    ControlConfig c={.mode=mode,.target=target,.accuracy=accuracy,.rule_count=packed[typed?1:0]};
+    ControlConfig c={.mode=mode,.target=target,.accuracy=accuracy,.block_touch=block_touch==JNI_TRUE,.assist_guard=assist_guard,.guard_score=guard_score,.rule_count=packed[typed?1:0]};
     if(c.rule_count<0||c.rule_count>MAX_RULES)return JNI_FALSE;
     int cursor=typed?2:1;
     for(int i=0;i<c.rule_count;i++){

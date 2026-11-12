@@ -76,7 +76,7 @@ public final class OverlayMenu {
         try{if(panel==null)create();manager.addView(panel,layout);visible=true;publish(false,null,false);handler.post(ticker);}catch(Exception e){toast("控制面板无法打开："+e.getClass().getSimpleName());}}
     private void hide(){handler.removeCallbacks(ticker);if(visible&&panel!=null){try{manager.removeViewImmediate(panel);}catch(RuntimeException ignored){}}visible=false;}
     private void publish(boolean reload,String message,boolean saved){if(web==null)return;try{
-        ControlsConfig c=NativeControls.load(activity);JSONObject state=new JSONObject();state.put("auto",LaunchActivity.isAutoplay());state.put("mode",c.mode);state.put("score",Integer.toString(c.target));state.put("accuracy",new java.math.BigDecimal(c.accuracy).divide(new java.math.BigDecimal(100)).toPlainString());state.put("reload",reload);state.put("saved",saved);state.put("skin",SkinController.summary(activity));
+        ControlsConfig c=NativeControls.load(activity);JSONObject state=new JSONObject();state.put("auto",LaunchActivity.isAutoplay());state.put("mode",c.mode);state.put("score",Integer.toString(c.target));state.put("accuracy",new java.math.BigDecimal(c.accuracy).divide(new java.math.BigDecimal(100)).toPlainString()).put("blockTouch",NativeControls.blockTouch(activity)).put("assistGuard",NativeControls.assistGuard(activity)).put("guardScore",NativeControls.guardScore(activity));state.put("reload",reload);state.put("saved",saved);state.put("skin",SkinController.summary(activity));
         JSONArray rules=new JSONArray();for(ControlsConfig.Rule r:c.rules){JSONObject o=new JSONObject();o.put("judgment",r.judgment);o.put("position",r.position);o.put("noteType",r.noteType);o.put("start",Integer.toString(r.start));o.put("end",Integer.toString(r.end));o.put("count",Integer.toString(r.count));StringBuilder ids=new StringBuilder();for(int id:r.indices){if(ids.length()>0)ids.append(',');ids.append(id);}o.put("indices",ids.toString());rules.put(o);}state.put("rules",rules);
         int[] s=NativeControls.getStatus();String runtime=LaunchActivity.isNativeLoaded()?(s[0]==1?"控制就绪 · 设置在下一局使用":"控制准备中，请在选曲页开启后再进入谱面"):"在选曲页开启自动游玩；保存设置后下一局生效。";
         if(s[2]>0)runtime="本局计划 "+s[3]+" 个，已执行 "+s[4]+" 个；预测 "+s[6]+" 分 / "+String.format(Locale.ROOT,"%.2f",s[7]/100.0)+"% · Miss "+s[8]+" / Good "+s[9]+" / Bad "+s[10];
@@ -88,6 +88,7 @@ public final class OverlayMenu {
         web.evaluateJavascript("window.receive("+state.toString()+")",null);
     }catch(Exception e){toast("读取控制状态失败");}}
     private final class Bridge {
+        @JavascriptInterface public String environment(){return "offline";}
         @JavascriptInterface public void submit(final String action,final String payload){if(action==null||payload==null||payload.length()>100000)return;handler.post(new Runnable(){public void run(){handle(action,payload);}});}
     }
     private void handle(String action,String payload){try{
@@ -95,8 +96,8 @@ public final class OverlayMenu {
         if(action.equals("ready")){publish(true,null,false);return;}
         if(action.equals("chapter-open")){hide();android.content.Intent intent=new android.content.Intent(activity,ChapterLibraryActivity.class);activity.startActivity(intent);return;}
         if(action.equals("skin-open")){hide();android.content.Intent intent=new android.content.Intent(activity,SkinActivity.class);activity.startActivity(intent);return;}
-        if(action.equals("save")){ControlsConfig c=ControlsConfig.parse(p.getInt("mode"),p.getString("score"),p.getString("accuracy"),p.getString("rules"));NativeControls.save(activity,c);publish(false,"已保存，下局使用新判定计划",true);return;}
-        if(action.equals("reset")){NativeControls.save(activity,ControlsConfig.parse(0,"1000000","100",""));publish(true,"游玩设置已重置；历史成绩未改变",true);return;}
+        if(action.equals("save")){int guard=p.optInt("assistGuard",0),score=p.optInt("guardScore",0);if(guard<0||guard>3||score<0||score>1000000)throw new IllegalArgumentException("成绩保护参数无效");ControlsConfig c=ControlsConfig.parse(p.getInt("mode"),p.getString("score"),p.getString("accuracy"),p.getString("rules"));NativeControls.save(activity,c,p.optBoolean("blockTouch",true),guard,score);publish(false,"已保存，下局使用新判定计划",true);return;}
+        if(action.equals("reset")){NativeControls.save(activity,ControlsConfig.parse(0,"1000000","100",""),true,0,0);publish(true,"游玩设置已重置；历史成绩未改变",true);return;}
         if(action.equals("auto")){if(busy){publish(false,"请等待上一次切换完成",false);return;}busy=true;final boolean enabled=p.getBoolean("enabled");new Thread(new Runnable(){public void run(){String error=null;try{LaunchActivity.changeAutoplay(activity,enabled);}catch(Throwable e){error=e.getClass().getSimpleName()+": "+String.valueOf(e.getMessage());}final String outcome=error;handler.post(new Runnable(){public void run(){busy=false;publish(false,outcome==null?(enabled?"自动游玩已开启":"自动游玩已关闭"):outcome,false);}});}},"PhigrosControlsToggle").start();return;}
         SharedPreferences.Editor edit=prefs.edit();
         if(action.equals("rks")){String value=p.getString("target").trim();RksEditor.validate(activity,value);edit.putString("rks_target",value).putBoolean("rks_pending",true).putBoolean("all_ap_pending",false).putBoolean("rks_restore",false);}
