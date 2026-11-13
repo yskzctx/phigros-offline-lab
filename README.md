@@ -1,5 +1,7 @@
 # 当前修复候选：177
 
+**公开预发行：** [v177-pre.1](https://github.com/yskzctx/phigros-offline-lab/releases/tag/v177-pre.1)（真实设备验收前保持预发行）
+
 [177安装说明](docs/INSTALL-177.md) · [177验证记录](docs/VERIFICATION-177.json) · [变更记录](CHANGELOG-177.md) · [免责声明](DISCLAIMER.md)
 
 177加入随机K判定、自动游玩触摸屏蔽开关、S/FC/AT成绩保护与额外保护分数。历史种子改为每次冷启动增量合并：已有成绩保持不变，只补齐新曲目目录中缺少的记录。游戏原生库与资源仍保持不变，无网络权限、不能登录、仅供本地。
