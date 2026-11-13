@@ -4,7 +4,7 @@
 
 # Phigros 离线共存测试项目
 
-**当前正式发行版：173** · [发布与下载](https://github.com/yskzctx/phigros-offline-lab/releases/tag/v173) · [安装说明](docs/INSTALL-173.md) · [173 更新记录](CHANGELOG-173.md)。新增 Perfect、Good 随机早晚 / Early / Late 和改进的目标预估；保留自制章节、谱面导入、音符皮肤与单份资源储存。
+**当前正式发行版：173** · [发布与下载](https://github.com/yskzctx/phigros-offline-lab/releases/tag/v173) · [安装说明](INSTALL-173.md) · [173 更新记录](../CHANGELOG-173.md)。新增 Perfect、Good 随机早晚 / Early / Late 和改进的目标预估；保留自制章节、谱面导入、音符皮肤与单份资源储存。
 
 **173 已通过电脑端检查，尚未真机验收。** 本次按项目所有者要求发布到正式发行渠道，不代表所有设备与谱面均已实测。
 
@@ -16,7 +16,7 @@
 
 ## LSPosed 实验模块（开发中）
 
-2026-10-24 已根据新的需求恢复两个模块计划，并新建 [两个模块的独立公开仓库](https://github.com/yskzctx/phigros-phira-lsposed-lab)。对应 APK、安装说明、校验文件和对应源码见 [v0.1.0-pre.1 公开预发行](https://github.com/yskzctx/phigros-phira-lsposed-lab/releases/tag/v0.1.0-pre.1)。两个模块均未真机验收；Phira 的目标分数、准确率、逐音符规则和 RKS 尚未接入，Phigros 原生章节的扩展特效/音效/判定线颜色未完成。本仓库 modules/phira 保留为开发历史快照，后续模块以独立仓库说明为准，不能称为全功能移植或正式发行版。
+2026-10-24 已根据新的需求恢复两个模块计划，并新建 [两个模块的独立公开仓库](https://github.com/yskzctx/phigros-phira-lsposed-lab)。当时 v0.1.0-pre.1 的 APK 与发行页已撤下；当前安装、验证文件和源码入口以[独立模块仓库首页](https://github.com/yskzctx/phigros-phira-lsposed-lab)为准。两个模块均未真机验收；Phira 的目标分数、准确率、逐音符规则和 RKS 尚未接入，Phigros 原生章节的扩展特效/音效/判定线颜色未完成。本仓库 modules/phira 保留为开发历史快照，后续模块以独立仓库说明为准，不能称为全功能移植或正式发行版。
 
 ## 历史版本与验证记录
 
