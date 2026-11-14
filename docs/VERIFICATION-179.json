@@ -1,0 +1,32 @@
+{
+  "artifact": "Phigros-4.0.1-157-offline-arm64-controls-v179-COMBINED-CANDIDATE.apk",
+  "sha256": "2c45694c2940921fe0535985546ea3f4535e651d4dfe8c9cbe3318a803876fda",
+  "bytes": 3345468549,
+  "version_code": 179,
+  "source_apk_version": 178,
+  "changes": [
+    "judgment protection requires automatic play",
+    "protection catches only when the projected score would leave its target",
+    "catch occurs at the end of the Perfect window",
+    "explicit judgment rules remain authoritative",
+    "real touch remains available while the score stays inside the target",
+    "random K remains a rule position"
+  ],
+  "game_native_resources_unchanged": true,
+  "preserved_entries": 3031,
+  "signature_verified": true,
+  "alignment_16k_verified": true,
+  "no_network_permission": true,
+  "storage_single_copy_fix_preserved": true,
+  "embedded_launch_and_panel_disclaimer": true,
+  "phigros_4012_profile_adapted": false,
+  "phigros_4012_block_reason": "4.0.1.2 APK/ELF not available to audit",
+  "guard_mode_manual_only": false,
+  "guard_score_required": true,
+  "guard_touch_reserved": true,
+  "device_tested": false,
+  "installed": false,
+  "published": false,
+  "guard_requires_autoplay": true,
+  "guard_last_millisecond_takeover": true
+}

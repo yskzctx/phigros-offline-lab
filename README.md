@@ -1,3 +1,11 @@
+# 当前离线候选：179
+
+**最新预发行：** [v179-pre.1](https://github.com/yskzctx/phigros-offline-lab/releases/tag/v179-pre.1)。本机构建、签名和分卷校验已完成，尚未进行本轮真机验收。
+
+179 将判定保护改为必须开启自动游玩。分数仍在保护目标内时保留真实触摸；即将掉出目标时，在 Perfect 判定窗口最后一毫秒接管。保护 AP、保护 FC、保护分数都按这个时机工作，显式判定规则优先。
+
+安装包使用标准 ZIP 分卷：`Phigros-offline-v179.z01`、`.z02`、`.z03`、`.zip`。四个文件放在同一目录，对 `.zip` 解压，没有密码。包名 `com.PigeonGames.Phigros.offline`，不声明网络权限，不提供登录。
+
 # 当前修复候选：177
 
 **公开预发行：** [v177-pre.1](https://github.com/yskzctx/phigros-offline-lab/releases/tag/v177-pre.1)（真实设备验收前保持预发行）
