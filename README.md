@@ -1,3 +1,11 @@
+# 当前离线候选：180
+
+**最新预发行：** [v180-pre.1](https://github.com/yskzctx/phigros-offline-lab/releases/tag/v180-pre.1)。本机构建、签名和分卷校验已完成，尚未进行本轮真机验收。
+
+180 完整补齐基准全解锁表中此前因键名格式差异遗漏的 12 项曲目解锁与曲绘（《星拂云锦 feat. koi》《Träne》《Äventyr》《Energy Synergy Matrix》《NYA!!!》《Avataar~Reincarnation of Kalpa~》以及 Spasmodic、Igallta、Rrharil 解禁标志）；控制面板增加“仅全解锁（保留成绩）”选项，支持一键解锁全曲目、全收藏品、全曲绘、全头像与全章节；“恢复上次备份”同步回退解锁状态。判定保护保持必须开启自动游玩、临界接管。
+
+安装包使用标准 ZIP 分卷：`Phigros-offline-v180.z01`、`.z02`、`.z03`、`.zip`。四个文件放在同一目录，对 `.zip` 解压，没有密码。包名 `com.PigeonGames.Phigros.offline`，不声明网络权限，不提供登录。
+
 # 当前离线候选：179
 
 **最新预发行：** [v179-pre.1](https://github.com/yskzctx/phigros-offline-lab/releases/tag/v179-pre.1)。本机构建、签名和分卷校验已完成，尚未进行本轮真机验收。
