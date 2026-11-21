@@ -119,6 +119,44 @@ public final class RksEditor {
         return out.toString();
     }
     private static Map<String,String> entries(String raw){Map<String,String> result=new HashMap<String,String>();Matcher m=ENTRY.matcher(raw);while(m.find())result.put(m.group(1),m.group(2));return result;}
+    /**
+     * 把一局「强制结算」写进本地历史，并按新历史重算 RKS。
+     *
+     * 只写这一张谱面，其它曲目记录保持不变；写入前先备份，走与 RKS 编辑相同的
+     * 事务目录，中途被杀可以恢复。调用方负责在结算后触发。
+     */
+    public static synchronized void applyForcedResult(Context c,String chartKey,int score,float accuracy,int combo)throws IOException{
+        if(!"com.PigeonGames.Phigros.offline".equals(c.getPackageName())&&!"com.PigeonGames.Phigros".equals(c.getPackageName()))
+            throw new IOException("拒绝修改其他包的存档");
+        if(chartKey==null||chartKey.trim().isEmpty())throw new IOException("缺少谱面标识");
+        if(accuracy<0f||accuracy>100f)throw new IOException("准确率超出 0～100");
+        if(score<0)throw new IOException("分数不能为负");
+        SharedPreferences prefs=NativeControls.preferences(c);
+        File state=new File(c.getFilesDir(),"offline-rks"),backups=new File(state,"backups");
+        if(!backups.isDirectory()&&!backups.mkdirs())throw new IOException("无法创建历史备份目录");
+        String[] names={c.getPackageName()+".v2.playerprefs.xml","com.PigeonGames.Phigros.v2.playerprefs.xml"};
+        File games=new File(c.getApplicationInfo().dataDir,"shared_prefs");
+        File backup=new File(backups,Long.toString(System.currentTimeMillis()));
+        if(!backup.mkdirs())throw new IOException("无法创建本次历史备份");
+        RksPlanner.Record record=new RksPlanner.Record(new RksPlanner.Chart(chartKey,0f),accuracy,accuracy>=99.999f);
+        record.score=score;record.combo=combo;
+        Map<String,String> update=new HashMap<String,String>();
+        try{
+            update.put(encrypt(chartKey),encrypt(record.json()));
+            for(String name:names){
+                File source=new File(games,name);
+                if(!source.isFile())continue;
+                copy(source,new File(backup,name));
+                String edited=replace(read(source),update);
+                try(InputStream in=new ByteArrayInputStream(edited.getBytes(StandardCharsets.UTF_8))){LaunchActivity.copyAtomic(in,source);}
+            }
+            if(!prefs.edit().putString("rks_backup",backup.getAbsolutePath())
+                    .putString("rks_status","已按强制结算写入本地历史 "+chartKey).commit())
+                throw new IOException("无法保存强制结算状态");
+            Log.i("PhigrosOffline","forced.result.recorded chart="+chartKey+" score="+score+" acc="+accuracy);
+        }catch(IOException e){throw e;}
+        catch(Exception e){throw new IOException("强制结算写入失败："+e.getClass().getSimpleName(),e);}
+    }
     static String mergeMissingCatalogEntries(String current,String seed)throws IOException {
         return CatalogXmlMerge.mergeMissing(current,seed);
     }

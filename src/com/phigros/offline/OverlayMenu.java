@@ -84,6 +84,15 @@ public final class OverlayMenu {
         if(s.length>=19&&s[11]==1)runtime+="；实际 P "+s[14]+" / G "+s[15]+" / B "+s[16]+" / M "+s[17]+"；最长连击 "+s[18]+" / "+s[2];
         if(s.length>=21&&s[11]==1)runtime+="；Early "+s[19]+" / Late "+s[20];
         state.put("runtime",runtime);state.put("rksTarget",prefs.getString("rks_target",""));String history=prefs.getString("rks_status","");
+        try{
+            ForcedResult.Values f=ForcedResult.load(activity);
+            JSONObject force=new JSONObject();force.put("enabled",f.enabled);force.put("score",f.score==0?"":Integer.toString(f.score));
+            force.put("accuracy",f.accuracy==0?"":ForcedResult.formatAccuracy(f.accuracy));
+            force.put("perfect",f.perfect==0?"":Integer.toString(f.perfect));force.put("good",f.good==0?"":Integer.toString(f.good));
+            force.put("bad",f.bad==0?"":Integer.toString(f.bad));force.put("miss",f.miss==0?"":Integer.toString(f.miss));
+            force.put("combo",f.combo==0?"":Integer.toString(f.combo));state.put("force",force);
+            state.put("forceState",f.enabled?"已启用 · 下次结算按上面的数值显示":"未启用");
+        }catch(IllegalArgumentException ignored){state.put("forceState","结算显示配置无效，请重新填写");}
         if(prefs.getBoolean("all_ap_pending",false))history="等待冷启动：全解锁 ＋ 全部 AP";else if(prefs.getBoolean("unlock_all_pending",false))history="等待冷启动：全曲目与全收藏品解锁";else if(prefs.getBoolean("rks_restore",false))history="等待冷启动：恢复上次历史备份";else if(prefs.getBoolean("rks_pending",false))history="等待冷启动：目标 RKS "+prefs.getString("rks_target","");state.put("history",history);if(message!=null)state.put("message",message);
         web.evaluateJavascript("window.receive("+state.toString()+")",null);
     }catch(Exception e){toast("读取控制状态失败");}}
@@ -96,6 +105,11 @@ public final class OverlayMenu {
         if(action.equals("skin-open")){hide();android.content.Intent intent=new android.content.Intent(activity,SkinActivity.class);activity.startActivity(intent);return;}
         if(action.equals("save")){int guard=p.optInt("assistGuard",0),score=p.optInt("guardScore",0);ControlsConfig c=ControlsConfig.parse(p.getInt("mode"),p.getString("score"),p.getString("accuracy"),p.getString("rules"));if(c.mode==3&&(guard<1||guard>3||(guard==3&&(score<1||score>1000000))))throw new IllegalArgumentException(guard==3?"保护分数必须填写":"判定保护类型无效");if(c.mode!=3)guard=0;NativeControls.save(activity,c,p.optBoolean("blockTouch",true),guard,score);publish(false,"已保存，下局使用新判定计划",true);return;}
         if(action.equals("reset")){NativeControls.save(activity,ControlsConfig.parse(0,"1000000","100",""),true,0,0);publish(true,"游玩设置已重置；历史成绩未改变",true);return;}
+        if(action.equals("force-result")){
+            ForcedResult.Values v=ForcedResult.parse(p.optBoolean("enabled",false),p.optString("score",""),p.optString("accuracy",""),p.optString("perfect",""),p.optString("good",""),p.optString("bad",""),p.optString("miss",""),p.optString("combo",""));
+            ForcedResult.save(activity,v);
+            publish(false,v.enabled?"结算显示已保存，本局结算即生效":"结算显示已关闭",true);return;
+        }
         if(action.equals("auto")){if(busy){publish(false,"请等待上一次切换完成",false);return;}busy=true;final boolean enabled=p.getBoolean("enabled");new Thread(new Runnable(){public void run(){String error=null;try{LaunchActivity.changeAutoplay(activity,enabled);}catch(Throwable e){error=e.getClass().getSimpleName()+": "+String.valueOf(e.getMessage());}final String outcome=error;handler.post(new Runnable(){public void run(){busy=false;publish(false,outcome==null?(enabled?"自动游玩已开启":"自动游玩已关闭"):outcome,false);}});}},"PhigrosControlsToggle").start();return;}
         SharedPreferences.Editor edit=prefs.edit();
         if(action.equals("rks")){String value=p.getString("target").trim();RksEditor.validate(activity,value);edit.putString("rks_target",value).putBoolean("rks_pending",true).putBoolean("all_ap_pending",false).putBoolean("unlock_all_pending",false).putBoolean("rks_restore",false);}

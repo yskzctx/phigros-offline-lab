@@ -15,7 +15,6 @@ public final class OfflineApplication extends Application {
         // Module adapters do not install it in either original game process.
         try {OfflineHttp.install();}
         catch(Error error){Log.w("PhigrosOffline","HTTP factory unavailable; Android INTERNET permission remains absent",error);}
-        if(ChapterProcess.isPlayer(getPackageName()))return;
         System.loadLibrary("phigros_privacy");
         OfflineAssets.initialize(this);
         // Restore before Unity or SDK content providers can cache the preferences.
@@ -26,7 +25,6 @@ public final class OfflineApplication extends Application {
 
     @Override public void onCreate() {
         super.onCreate();
-        if(ChapterProcess.isPlayer(getPackageName()))return;
         Log.i("PhigrosOffline", "app.created; manual by default, controls on game entry");
         registerActivityLifecycleCallbacks(new ActivityLifecycleCallbacks() {
             public void onActivityResumed(Activity activity) {

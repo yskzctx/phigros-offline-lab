@@ -163,8 +163,41 @@ static void perfect(void *score,float code,float time,Vec3 position,bool is_hold
     }
     perfect_original(score,code,time,position,is_hold,method);
 }
+// ---- forced result display -------------------------------------------------
+// An independent opt-in switch: when on, the settlement screen shows the values
+// the operator configured instead of the run's real outcome. It is deliberately
+// decoupled from autoplay and from judgment protection, and it never changes the
+// judgments that were actually executed - only the numbers the result object
+// carries into the settlement screen and the local record.
+static atomic_bool force_enabled=false;
+static atomic_int force_score,force_accuracy,force_perfect,force_good,force_bad,force_miss,force_combo;
+
+static bool force_result_apply(void *out) {
+    if (!out || !atomic_load(&force_enabled)) return false;
+    // Values are written as configured, including combinations a real run could
+    // never produce. Only NaN accuracy is refused, because it would corrupt the
+    // float field the settlement screen formats.
+    *integer(out,0x10)=atomic_load(&force_score);
+    int accuracy=atomic_load(&force_accuracy);
+    *number(out,0x18)=(float)accuracy/100.f;
+    *integer(out,0x1c)=atomic_load(&force_perfect);
+    *integer(out,0x20)=atomic_load(&force_good);
+    *integer(out,0x24)=atomic_load(&force_bad);
+    *integer(out,0x28)=atomic_load(&force_miss);
+    *integer(out,0x34)=atomic_load(&force_combo);
+    // Early/Late split only describes timing of a real run; a forced result has
+    // no timing to report.
+    *integer(out,0x2c)=0;*integer(out,0x30)=0;
+    return true;
+}
+
 static void *result(void *score,const void *method) {
     void *out=result_original(score,method);
+    if(out && force_result_apply(out)) {
+        __android_log_print(ANDROID_LOG_INFO,"PhigrosOffline","control.result.forced score=%d acc=%d P=%d G=%d B=%d M=%d combo=%d",
+            *integer(out,0x10),(int)(*number(out,0x18)*100.f+0.5f),*integer(out,0x1c),*integer(out,0x20),
+            *integer(out,0x24),*integer(out,0x28),*integer(out,0x34));
+    }
     if(out && score==plan_score && atomic_load(&enabled) && atomic_load(&ready)) {
         // Read the game's real result. Never replace its score or judgments.
         atomic_store(&status_actual_score,*integer(out,0x10));
@@ -258,8 +291,13 @@ static bool click(void *s,const void *m) { return automatic(s,m,click_original,0
 static bool drag(void *s,const void *m) { return automatic(s,m,drag_original,1); }
 static bool flick(void *s,const void *m) { return automatic(s,m,flick_original,2); }
 static bool hold(void *s,const void *m) { return automatic(s,m,hold_original,3); }
+// The game calls this to persist a finished run. Swallowing it made automated
+// sessions produce no record at all, so nothing could ever be uploaded even when
+// the host's own upload path was intact. Writes now always go through; session
+// bookkeeping (session_dirty) only decides whether the caller restores original
+// records on the next cold start, which RksEditor already handles separately.
 static void record(void *s,void *song,void *difficulty,void *result,const void *m) {
-    if (!atomic_load(&session_dirty) || !atomic_load(&ready)) record_original(s,song,difficulty,result,m);
+    record_original(s,song,difficulty,result,m);
 }
 
 #ifndef OFFLINE_HOST_TEST
@@ -336,7 +374,12 @@ JNIEXPORT void JNICALL Java_com_phigros_offline_LaunchActivity_setAutoplay(JNIEn
 }
 JNIEXPORT jboolean JNICALL Java_com_phigros_offline_NativeControls_configure(JNIEnv *env,jclass cls,jint mode,jint target,jint accuracy,jboolean block_touch,jint assist_guard,jint guard_score,jintArray words) {
     (void)cls;
-    if(mode<0||mode>2||target<0||target>1000000||accuracy<0||accuracy>10000||assist_guard<0||assist_guard>3||guard_score<0||guard_score>1000000||!words)return JNI_FALSE;
+    // mode 3 is judgment protection: same planning pipeline, different takeover
+    // timing. It must be accepted here or the Java layer cannot save it at all.
+    if(mode<0||mode>3||target<0||target>1000000||accuracy<0||accuracy>10000||assist_guard<0||assist_guard>3||guard_score<0||guard_score>1000000||!words)return JNI_FALSE;
+    // Protection is only meaningful with a chosen protection kind. Requiring it
+    // here keeps a stale goal_mode=3 from silently running as plain autoplay.
+    if(mode==3&&(assist_guard<1||(assist_guard==3&&guard_score<1)))return JNI_FALSE;
     int length=(*env)->GetArrayLength(env,words);
     if(length<1||length>MAX_CONFIG_WORDS)return JNI_FALSE;
     jint packed[MAX_CONFIG_WORDS];(*env)->GetIntArrayRegion(env,words,0,length,packed);
@@ -345,6 +388,10 @@ JNIEXPORT jboolean JNICALL Java_com_phigros_offline_NativeControls_configure(JNI
     if(typed&&length<2)return JNI_FALSE;
     ControlConfig c={.mode=mode,.target=target,.accuracy=accuracy,.block_touch=block_touch==JNI_TRUE,.assist_guard=assist_guard,.guard_score=guard_score,.rule_count=packed[typed?1:0]};
     if(c.rule_count<0||c.rule_count>MAX_RULES)return JNI_FALSE;
+    // Protection keeps real touches authoritative while the score is still inside
+    // the target, so blocking would defeat its purpose. Force it off regardless of
+    // what the caller sent.
+    if(mode==3)c.block_touch=false;
     int cursor=typed?2:1;
     for(int i=0;i<c.rule_count;i++){
         if(cursor+(typed?7:6)>length)return JNI_FALSE;
@@ -362,6 +409,24 @@ JNIEXPORT jintArray JNICALL Java_com_phigros_offline_NativeControls_status(JNIEn
     jint values[]={atomic_load(&ready),atomic_load(&enabled),atomic_load(&status_total),atomic_load(&status_planned),atomic_load(&status_hit),(jint)atomic_load(&config_revision),atomic_load(&status_score),atomic_load(&status_accuracy),atomic_load(&status_miss),atomic_load(&status_good),atomic_load(&status_bad),atomic_load(&status_final),atomic_load(&status_actual_score),atomic_load(&status_actual_accuracy),atomic_load(&status_actual_perfect),atomic_load(&status_actual_good),atomic_load(&status_actual_bad),atomic_load(&status_actual_miss),atomic_load(&status_actual_combo),atomic_load(&status_actual_early),atomic_load(&status_actual_late)};
     jintArray out=(*env)->NewIntArray(env,21);
     if(out)(*env)->SetIntArrayRegion(env,out,0,21,values);return out;
+}
+JNIEXPORT jboolean JNICALL Java_com_phigros_offline_NativeControls_configureForcedResult(JNIEnv *env,jclass cls,jboolean enabled,jint score,jint accuracy,jint perfect,jint good,jint bad,jint miss,jint combo) {
+    (void)env;(void)cls;
+    // Ranges are deliberately permissive: the whole point of this switch is to
+    // display values a real run could not produce. Only values that would corrupt
+    // the settlement screen's own arithmetic are rejected.
+    if(score<0||score>99999999||accuracy<0||accuracy>10000)return JNI_FALSE;
+    if(perfect<0||good<0||bad<0||miss<0||combo<0)return JNI_FALSE;
+    if(perfect>999999||good>999999||bad>999999||miss>999999||combo>999999)return JNI_FALSE;
+    atomic_store(&force_score,score);
+    atomic_store(&force_accuracy,accuracy);
+    atomic_store(&force_perfect,perfect);
+    atomic_store(&force_good,good);
+    atomic_store(&force_bad,bad);
+    atomic_store(&force_miss,miss);
+    atomic_store(&force_combo,combo);
+    atomic_store(&force_enabled,enabled==JNI_TRUE);
+    return JNI_TRUE;
 }
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm,void *reserved) {
     (void)vm;(void)reserved;

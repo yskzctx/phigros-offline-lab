@@ -129,6 +129,7 @@ public final class LaunchActivity extends Activity {
             Log.i("PhigrosOffline", "native.load.begin; mode=enabled");
             if(!nativeLoaded) {System.loadLibrary("phigros_offline");nativeLoaded=true;}
             NativeControls.apply(NativeControls.load(context),NativeControls.blockTouch(context),NativeControls.assistGuard(context),NativeControls.guardScore(context));
+            ForcedResult.initialize(context);
             setAutoplay(true);
             Log.i("PhigrosOffline", "native.mode.enabled");
         } else {

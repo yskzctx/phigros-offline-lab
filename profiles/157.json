@@ -1,0 +1,77 @@
+{
+  "profileVersion": 1,
+  "versionCode": 157,
+  "versionName": "4.0.1",
+  "abi": "arm64-v8a",
+  "il2cppSha256": "511e15b9324c171b585ae954e87266437b5de439289918331d1afce9c2b88433",
+  "il2cppBytes": 71706832,
+  "complete": true,
+  "hooks": {
+    "click": {
+      "rva": 30941516,
+      "prefix": "ea0f1dfce9a3006dfe0f00f9f44f02a9",
+      "relocateMask": 0
+    },
+    "drag": {
+      "rva": 30943480,
+      "prefix": "e923bd6dfe0b00f9f44f02a974370190",
+      "relocateMask": 8
+    },
+    "flick": {
+      "rva": 30945016,
+      "prefix": "e923bd6dfe0b00f9f44f02a974370190",
+      "relocateMask": 8
+    },
+    "hold": {
+      "rva": 30948232,
+      "prefix": "e923bd6dfe5701a9f44f02a9543701f0",
+      "relocateMask": 8
+    },
+    "record": {
+      "rva": 30119976,
+      "prefix": "fe0f1cf8f85f01a9f65702a9f44f03a9",
+      "relocateMask": 0
+    },
+    "perfect": {
+      "rva": 30963868,
+      "prefix": "ec0f1bfceb2b016de923026dfe5703a9",
+      "relocateMask": 0
+    },
+    "result": {
+      "rva": 30958528,
+      "prefix": "fe57bea9f44f01a95437019088fa6839",
+      "relocateMask": 4
+    },
+    "miss": {
+      "rva": 30962916,
+      "prefix": "e80f1efcfe0700f9f44f01a9343701f0",
+      "relocateMask": 8
+    },
+    "good": {
+      "rva": 30963384,
+      "prefix": "ec0f1bfceb2b016de923026dfe5703a9",
+      "relocateMask": 0
+    },
+    "skinClickControl$$NoteMove": {
+      "rva": 30940824,
+      "prefix": "eb2bbc6de923016dfe5702a9f44f03a9",
+      "relocateMask": 0
+    },
+    "skinDragControl$$NoteMove": {
+      "rva": 30942844,
+      "prefix": "eb2bbc6de923016dfe5702a9f44f03a9",
+      "relocateMask": 0
+    },
+    "skinFlickControl$$NoteMove": {
+      "rva": 30944380,
+      "prefix": "eb2bbc6de923016dfe5702a9f44f03a9",
+      "relocateMask": 0
+    },
+    "skinHoldControl$$NoteMove": {
+      "rva": 30946124,
+      "prefix": "ec0f1bfcebab006de9a3016dfe1700f9",
+      "relocateMask": 0
+    }
+  },
+  "aux": {}
+}

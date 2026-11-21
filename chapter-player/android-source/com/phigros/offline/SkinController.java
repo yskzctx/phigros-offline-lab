@@ -66,12 +66,23 @@ public final class SkinController {
     static void select(Context c,String id)throws IOException {
         if(!id.isEmpty()){SkinPack pack=selected(c,id);if(!new File(pack.directory,"sanitized-v1").isFile())throw new IOException("图片转换尚未完成");}
         if(!prefs(c).edit().putString("skin_id",id).commit())throw new IOException("皮肤配置保存失败");
+        // 选择皮肤时同步应用它的音效/特效/颜色/缩放；清空皮肤则不再改动这些设置。
+        if(id.isEmpty())return;
+        SkinPack pack=selected(c,id);
+        SkinStyle.Style style=SkinStyle.fromMeta(SkinPack.readMeta(new File(pack.directory,"info.yml")));
+        SkinStyle.apply(c,style);
     }
     static String selectedId(Context c){return prefs(c).getString("skin_id","");}
     static String summary(Context c){String id=selectedId(c);String label=id.isEmpty()?"默认皮肤":"已选择皮肤";try{if(!id.isEmpty())label=selected(c,id).name;}catch(IOException e){return "皮肤文件有误，请重新选择";}
         if(!failure.isEmpty())return failure;
         if(!id.equals(activeId))return label+" · 重启游戏后应用";
         if(loaded){int[] s=status();if(s.length>=4){if(s[0]<0||s[3]>0)return "皮肤加载异常，失败部分使用默认图片";}}
+        // 附带样式摘要，让面板能说清这个包除了换图还改了什么。
+        try{if(!id.isEmpty()){
+            SkinPack pack=selected(c,id);
+            String style=SkinStyle.summary(SkinStyle.fromMeta(SkinPack.readMeta(new File(pack.directory,"info.yml"))));
+            return label+" · "+style;
+        }}catch(IOException ignored){}
         return label;
     }
 }

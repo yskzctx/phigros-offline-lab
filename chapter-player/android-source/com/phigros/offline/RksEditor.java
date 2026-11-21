@@ -51,6 +51,62 @@ public final class RksEditor {
         return new String(out.toByteArray(),StandardCharsets.UTF_8);
     }
     private static void copy(File a,File b)throws IOException {try(InputStream in=new FileInputStream(a)){LaunchActivity.copyAtomic(in,b);}}
+
+    private static final Set<String> PRESERVED_KEYS = new HashSet<String>(Arrays.asList(
+        "playerID", "playerIDUpdated", "PlayerIdAppear", "selfIntro",
+        "UserIconKeyName", "UserIllustrationKeyName", "UserIllustrationKeyLevel",
+        "ChallengeModeRank", "autoSync", "offset", "bright", "noteScale",
+        "musicVolume", "SEVolume", "HitFXVolume", "hitFxIsOn", "chordSupport",
+        "aPfCisOn", "chartMirror", "IsLowRes", "IsVisionReplayEnable",
+        "IsVisionReplayOn", "SortDirectionInSongSelector", "SortTypeInSongSelector",
+        "dspSliderValue", "AntiAddictionRestrictType", "readPrivacyPolicy",
+        "splashWarningDisplayedV3_0", "IsFirstRun", "IsOldScoreClearedV390",
+        "songsUpdateInfoVersionCode"
+    ));
+
+    public static Map<String,String> unlockEntries(String allApXml) throws Exception {
+        Map<String,String> result = new LinkedHashMap<String,String>();
+        Matcher m = ENTRY.matcher(allApXml);
+        while (m.find()) {
+            String encName = m.group(1);
+            String encVal = m.group(2);
+            String plainName = decrypt(encName);
+            if (plainName.contains(".Record.") || plainName.startsWith("NumOfMoney")) continue;
+            if (PRESERVED_KEYS.contains(plainName)) continue;
+            result.put(encName, encVal);
+        }
+        return result;
+    }
+
+    public static String replaceOrAppend(String raw, Map<String,String> changes) throws IOException {
+        Matcher m = ENTRY.matcher(raw); StringBuffer out = new StringBuffer();
+        Set<String> matched = new HashSet<String>();
+        while(m.find()) {
+            String key = m.group(1);
+            String value = changes.get(key);
+            if(value == null) m.appendReplacement(out, Matcher.quoteReplacement(m.group()));
+            else {
+                matched.add(key);
+                String entry = m.group(); int a = entry.indexOf('>') + 1, b = entry.lastIndexOf("</string>");
+                m.appendReplacement(out, Matcher.quoteReplacement(entry.substring(0, a) + value + entry.substring(b)));
+            }
+        }
+        m.appendTail(out);
+        if(matched.size() != changes.size()) {
+            Set<String> existing = entries(out.toString()).keySet();
+            StringBuilder additions = new StringBuilder();
+            for(Map.Entry<String,String> e : changes.entrySet()) {
+                if(!existing.contains(e.getKey())) {
+                    additions.append("<string name=\"").append(e.getKey()).append("\">").append(e.getValue()).append("</string>\n");
+                }
+            }
+            int end = out.lastIndexOf("</map>");
+            if(end < 0) throw new IOException("存档结构格式异常");
+            out.insert(end, additions);
+        }
+        return out.toString();
+    }
+
     private static String replace(String raw,Map<String,String> changes)throws IOException {
         Matcher m=ENTRY.matcher(raw);StringBuffer out=new StringBuffer();int found=0;
         while(m.find()) {
@@ -63,6 +119,44 @@ public final class RksEditor {
         return out.toString();
     }
     private static Map<String,String> entries(String raw){Map<String,String> result=new HashMap<String,String>();Matcher m=ENTRY.matcher(raw);while(m.find())result.put(m.group(1),m.group(2));return result;}
+    /**
+     * 把一局「强制结算」写进本地历史，并按新历史重算 RKS。
+     *
+     * 只写这一张谱面，其它曲目记录保持不变；写入前先备份，走与 RKS 编辑相同的
+     * 事务目录，中途被杀可以恢复。调用方负责在结算后触发。
+     */
+    public static synchronized void applyForcedResult(Context c,String chartKey,int score,float accuracy,int combo)throws IOException{
+        if(!"com.PigeonGames.Phigros.offline".equals(c.getPackageName())&&!"com.PigeonGames.Phigros".equals(c.getPackageName()))
+            throw new IOException("拒绝修改其他包的存档");
+        if(chartKey==null||chartKey.trim().isEmpty())throw new IOException("缺少谱面标识");
+        if(accuracy<0f||accuracy>100f)throw new IOException("准确率超出 0～100");
+        if(score<0)throw new IOException("分数不能为负");
+        SharedPreferences prefs=NativeControls.preferences(c);
+        File state=new File(c.getFilesDir(),"offline-rks"),backups=new File(state,"backups");
+        if(!backups.isDirectory()&&!backups.mkdirs())throw new IOException("无法创建历史备份目录");
+        String[] names={c.getPackageName()+".v2.playerprefs.xml","com.PigeonGames.Phigros.v2.playerprefs.xml"};
+        File games=new File(c.getApplicationInfo().dataDir,"shared_prefs");
+        File backup=new File(backups,Long.toString(System.currentTimeMillis()));
+        if(!backup.mkdirs())throw new IOException("无法创建本次历史备份");
+        RksPlanner.Record record=new RksPlanner.Record(new RksPlanner.Chart(chartKey,0f),accuracy,accuracy>=99.999f);
+        record.score=score;record.combo=combo;
+        Map<String,String> update=new HashMap<String,String>();
+        try{
+            update.put(encrypt(chartKey),encrypt(record.json()));
+            for(String name:names){
+                File source=new File(games,name);
+                if(!source.isFile())continue;
+                copy(source,new File(backup,name));
+                String edited=replace(read(source),update);
+                try(InputStream in=new ByteArrayInputStream(edited.getBytes(StandardCharsets.UTF_8))){LaunchActivity.copyAtomic(in,source);}
+            }
+            if(!prefs.edit().putString("rks_backup",backup.getAbsolutePath())
+                    .putString("rks_status","已按强制结算写入本地历史 "+chartKey).commit())
+                throw new IOException("无法保存强制结算状态");
+            Log.i("PhigrosOffline","forced.result.recorded chart="+chartKey+" score="+score+" acc="+accuracy);
+        }catch(IOException e){throw e;}
+        catch(Exception e){throw new IOException("强制结算写入失败："+e.getClass().getSimpleName(),e);}
+    }
     static String mergeMissingCatalogEntries(String current,String seed)throws IOException {
         return CatalogXmlMerge.mergeMissing(current,seed);
     }
@@ -89,7 +183,10 @@ public final class RksEditor {
     }
     private static String seedData(String raw)throws Exception {
         Map<String,String> saved=entries(raw),changes=new HashMap<String,String>();long amount=0,factor=1;
-        for(int i=0;i<5;i++){String key=encrypt("NumOfMoney"+i),value=saved.get(key);if(value==null)throw new IOException("本地 Data 字段缺失");int part=Integer.parseInt(decrypt(value));if(part<0)throw new IOException("本地 Data 数量异常");amount=Math.addExact(amount,Math.multiplyExact((long)part,factor));factor=Math.multiplyExact(factor,1024);}
+        // Official 4.0.1 and 4.0.1.2 both use NumOfMoney0..4. A fresh or
+        // untouched local save may simply omit them; absence means zero,
+        // while a present field that cannot be decoded remains an error.
+        for(int i=0;i<5;i++){String key=encrypt("NumOfMoney"+i),value=saved.get(key);int part=0;if(value!=null){part=Integer.parseInt(decrypt(value));if(part<0)throw new IOException("本地 Data 数量异常");}amount=Math.addExact(amount,Math.multiplyExact((long)part,factor));factor=Math.multiplyExact(factor,1024);}
         long minimum=10000L*1024L;
         if(amount>=minimum)return raw;
         for(int i=0;i<5;i++){changes.put(encrypt("NumOfMoney"+i),encrypt(Long.toString(minimum%1024)));minimum/=1024;}
@@ -101,7 +198,7 @@ public final class RksEditor {
         File state=new File(c.getFilesDir(),"offline-rks"),backups=new File(state,"backups"),txn=new File(state,"transaction");
         File marker=new File(txn,"ready.properties");
         boolean seedData=!prefs.getBoolean("data_10000mb_v165",false);
-        if(!marker.isFile() && !prefs.getBoolean("rks_pending",false) && !prefs.getBoolean("rks_restore",false)&&!prefs.getBoolean("all_ap_pending",false)&&!seedData)return;
+        if(!marker.isFile() && !prefs.getBoolean("rks_pending",false) && !prefs.getBoolean("rks_restore",false) && !prefs.getBoolean("all_ap_pending",false) && !prefs.getBoolean("unlock_all_pending",false) && !seedData)return;
         String[] names={c.getPackageName()+".v2.playerprefs.xml","com.PigeonGames.Phigros.v2.playerprefs.xml"};
         File games=new File(c.getApplicationInfo().dataDir,"shared_prefs");
         Properties meta=new Properties();
@@ -109,7 +206,7 @@ public final class RksEditor {
             if(marker.isFile()) {try(InputStream in=new FileInputStream(marker)){meta.load(in);}}
             else {
                 if(!txn.isDirectory() && !txn.mkdirs())throw new IOException("无法创建 RKS 事务目录");
-                boolean restore=prefs.getBoolean("rks_restore",false),allAP=prefs.getBoolean("all_ap_pending",false);
+                boolean restore=prefs.getBoolean("rks_restore",false),allAP=prefs.getBoolean("all_ap_pending",false),unlockOnly=prefs.getBoolean("unlock_all_pending",false);
                 Map<String,String> updates=new HashMap<String,String>();
                 List<RksPlanner.Chart> charts=catalog(c);
                 if(restore) {
@@ -123,14 +220,25 @@ public final class RksEditor {
                     List<RksPlanner.Record> records=allAP?RksPlanner.allAP(charts):prefs.getBoolean("rks_pending",false)?RksPlanner.generate(charts,validate(c,prefs.getString("rks_target",""))):null;
                     int ap=0;
                     if(records!=null)for(RksPlanner.Record r:records){updates.put(encrypt(r.chart.key),encrypt(r.json()));if(r.ap)ap++;}
+                    if(allAP || unlockOnly) {
+                        try(InputStream in=c.getAssets().open("offline/all-ap.xml")){
+                            ByteArrayOutputStream out=new ByteArrayOutputStream();
+                            byte[] buffer=new byte[65536];int count;
+                            while((count=in.read(buffer))!=-1)out.write(buffer,0,count);
+                            Map<String,String> unlocks=unlockEntries(new String(out.toByteArray(),StandardCharsets.UTF_8));
+                            updates.putAll(unlocks);
+                        }
+                    }
                     File backup=new File(backups,Long.toString(System.currentTimeMillis()));
                     for(String name:names) {
-                        File source=new File(games,name);String edited=replace(read(source),updates);if(seedData)edited=seedData(edited);
+                        File source=new File(games,name);String edited=replaceOrAppend(read(source),updates);if(seedData)edited=seedData(edited);
                         copy(source,new File(backup,name));
                         try(InputStream in=new ByteArrayInputStream(edited.getBytes(StandardCharsets.UTF_8))){LaunchActivity.copyAtomic(in,new File(txn,name));}
                     }
                     meta.setProperty("backup",backup.getAbsolutePath());
-                    meta.setProperty("status",records==null?"初始 Data 已准备：至少 10000 MB":String.format(Locale.ROOT,"历史 RKS %.4f，AP %d / 1037",RksPlanner.calculate(records),ap));
+                    if(unlockOnly)meta.setProperty("status","全曲目与全收藏品已解锁");
+                    else if(allAP)meta.setProperty("status",String.format(Locale.ROOT,"全解锁 ＋ 历史 RKS %.4f，AP %d / 1037",RksPlanner.calculate(records),ap));
+                    else meta.setProperty("status",records==null?"初始 Data 已准备：至少 10000 MB":String.format(Locale.ROOT,"历史 RKS %.4f，AP %d / 1037",RksPlanner.calculate(records),ap));
                 }
                 if(seedData)meta.setProperty("dataSeeded","true");
                 ByteArrayOutputStream out=new ByteArrayOutputStream();meta.store(out,"Prepared independent local history transaction");
@@ -138,7 +246,7 @@ public final class RksEditor {
             }
             // Commit both prepared files. A killed process resumes from the durable journal.
             for(String name:names){copy(new File(txn,name),new File(games,name));new File(games,name+".bak").delete();}
-            SharedPreferences.Editor update=prefs.edit().putBoolean("rks_pending",false).putBoolean("rks_restore",false).putBoolean("all_ap_pending",false).putString("rks_status",meta.getProperty("status","历史成绩已更新"));
+            SharedPreferences.Editor update=prefs.edit().putBoolean("rks_pending",false).putBoolean("rks_restore",false).putBoolean("all_ap_pending",false).putBoolean("unlock_all_pending",false).putString("rks_status",meta.getProperty("status","历史成绩已更新"));
             if(meta.getProperty("dataSeeded","false").equals("true"))update.putBoolean("data_10000mb_v165",true);
             if(meta.containsKey("backup"))update.putString("rks_backup",meta.getProperty("backup"));
             if(!update.commit())throw new IOException("无法保存 RKS 完成状态");

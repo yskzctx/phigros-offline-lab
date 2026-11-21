@@ -18,6 +18,7 @@
 #include <jni.h>
 #include <android/log.h>
 #include "skin-hooks.h"
+#include "skin-scale.h"
 static uintptr_t image;
 #include "native-hook-impl.h"
 #endif
@@ -78,7 +79,13 @@ static void *skin_sprite(int slot,void *original){
     void *tex=texture_cache[slot];
     if(!tex){tex=load_texture_impl(texture_names[slot],original);if(!tex){atomic_fetch_add(&skin_errors,1);return NULL;}texture_cache[slot]=tex;if(!texture_handles[slot])texture_handles[slot]=gc_new(tex,false);atomic_fetch_add(&loaded_textures,1);}
     int w=texture_width(tex,NULL),h=texture_height(tex,NULL);if(w<1||h<1||w>4096||h>4096)return NULL;
-    float scaled=ppu*(float)w/old.w;pivot.x/=old.w;pivot.y/=old.h;
+    // Lock BOTH axes to the original note's world size; see skin-scale.h for why a
+    // single uniform scale has to use the larger of the two ratios. Locking only
+    // the width let a skin's height drift with its PNG aspect ratio, which is the
+    // "note size jumps around after importing a skin" report.
+    SkinFit fit;
+    if(skin_fit_contain(ppu,old.w,old.h,w,h,&fit))return NULL;
+    float scaled=fit.scale;pivot.x/=old.w;pivot.y/=old.h;
     if(!isfinite(scaled)||!isfinite(pivot.x)||!isfinite(pivot.y)||scaled<=0.f)return NULL;
     for(int i=0;i<cache_count;i++){SpriteEntry *e=&sprite_cache[i];if(e->sprite&&e->slot==slot&&e->ppu==scaled&&e->pivot.x==pivot.x&&e->pivot.y==pivot.y)return e->sprite;}
     if(cache_count>=64){atomic_fetch_add(&skin_errors,1);return NULL;}
