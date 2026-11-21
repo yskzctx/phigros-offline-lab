@@ -34,6 +34,7 @@ C_TESTS = [
 MODULE_C_TESTS = [
     ('cloud_guard', 'modules/phigros/tests/cloud_guard_test.c', []),
     ('attachment_order', 'modules/phigros/tests/attachment-order-test.c', []),
+    ('phira_guard', 'modules/phira/tests/guard_rescue_test.c', ['-I', 'modules/phira/native']),
 ]
 
 C_FLAGS = ['-O2', '-std=c11', '-Wall', '-Wextra', '-Werror',
@@ -220,18 +221,19 @@ def main() -> int:
         print('== NDK native compile (module) ==')
         ndk_clang = Path(r'C:\Users\yskzc\Android\Sdk\ndk\26.3.11579264\toolchains\llvm\prebuilt\windows-x86_64\bin\aarch64-linux-android26-clang.cmd')
         if ndk_clang.is_file() and MODULE.is_dir():
-            target = Path(os.environ.get('TEMP', '/tmp')) / 'dsh-lsp.so'
-            code, output = run([str(ndk_clang), '-shared', '-fPIC', '-O2', '-std=c11',
-                                '-Wall', '-Wextra', '-Werror', '-Wno-unused-function',
-                                '-Wno-unused-variable', '-o', str(target),
-                                str(MODULE / 'native' / 'lsp-entry.c'),
-                                '-llog', '-ldl', '-lm'], MODULE_REPO)
-            print(f'  {"PASS" if code == 0 else "FAIL"} libphigros_lsp.so')
-            if code:
-                for line in output.splitlines()[:3]:
-                    print(f'       {line}')
-            total_pass += 1 if code == 0 else 0
-            total_fail += 0 if code == 0 else 1
+            for label, source in (('libphigros_lsp.so', MODULE / 'native' / 'lsp-entry.c'),
+                                  ('libphira.so', MODULE_REPO / 'modules' / 'phira' / 'native' / 'module.c')):
+                target = Path(os.environ.get('TEMP', '/tmp')) / f'dsh-{label}'
+                code, output = run([str(ndk_clang), '-shared', '-fPIC', '-O2', '-std=c11',
+                                    '-Wall', '-Wextra', '-Werror', '-Wno-unused-function',
+                                    '-Wno-unused-variable', '-o', str(target),
+                                    str(source), '-llog', '-ldl', '-lm'], MODULE_REPO)
+                print(f'  {"PASS" if code == 0 else "FAIL"} {label}')
+                if code:
+                    for line in output.splitlines()[:3]:
+                        print(f'       {line}')
+                total_pass += 1 if code == 0 else 0
+                total_fail += 0 if code == 0 else 1
         else:
             print('  SKIP NDK clang unavailable')
 
