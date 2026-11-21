@@ -173,6 +173,7 @@ def main() -> int:
             java_tests = [
                 ('GuardAndForcedResultTest', 'com.phigros.offline.GuardAndForcedResultTest'),
                 ('SkinStyleTest', 'com.phigros.offline.SkinStyleTest'),
+                ('ForcedResultRksTest', 'com.phigros.offline.ForcedResultRksTest'),
             ]
             test_out = Path(os.environ.get('TEMP', '/tmp')) / 'dsh-offline-javatest'
             shutil.rmtree(test_out, ignore_errors=True)
