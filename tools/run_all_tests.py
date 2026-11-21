@@ -92,6 +92,36 @@ def main() -> int:
             print(f'       {line}')
         total_fail += 1
 
+    print('== profile files are well-formed ==')
+    profiles = sorted((REPO / 'profiles').glob('*.json'))
+    if not profiles:
+        print('  FAIL no profiles found')
+        total_fail += 1
+    else:
+        import json as _json
+        bad = []
+        for path in profiles:
+            try:
+                data = _json.loads(path.read_text(encoding='utf-8'))
+            except Exception as error:
+                bad.append(f'{path.name}: {error}')
+                continue
+            for key in ('profileVersion', 'versionCode', 'versionName', 'il2cppSha256', 'hooks'):
+                if key not in data:
+                    bad.append(f'{path.name}: missing {key}')
+            # An incomplete profile must say why, or a reader could mistake an empty
+            # hook table for "this version needs no hooks".
+            if not data.get('complete') and not data.get('blockedReason'):
+                bad.append(f'{path.name}: incomplete without blockedReason')
+        if bad:
+            print(f'  FAIL {len(bad)} problem(s)')
+            for problem in bad[:5]:
+                print(f'       {problem}')
+            total_fail += 1
+        else:
+            print(f'  PASS {len(profiles)} profile(s): ' + ', '.join(p.stem for p in profiles))
+            total_pass += 1
+
     print('== profile matches C headers ==')
     code, output = run([sys.executable, 'tools/gen_profile.py',
                         '--version-code', '157', '--version-name', '4.0.1',

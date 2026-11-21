@@ -1,0 +1,34 @@
+{
+  "profileVersion": 1,
+  "versionCode": 161,
+  "versionName": "4.1.0",
+  "abi": "arm64-v8a",
+  "il2cppSha256": "b216f4163d5394aae7be3e4b9fbca48fafdca78a19ed3259eab88dff347d1145",
+  "il2cppBytes": 71736312,
+  "complete": false,
+  "hooks": {},
+  "aux": {},
+  "blockedReason": "Hook prologues all changed: 4.1.0 moved from Unity 2019.4 to 2022.3. Two independent automatic recovery paths (instruction-skeleton matching over a 4-instruction index, and metadata method-name resolution through the il2cpp method record table) reproduce the audited 157 offsets exactly but produce mid-function or semantically wrong addresses here. Example: 157 ClickControl$$NoteMove touches fields +0x708/+0xbb8/+0xdb8, while the recovered 4.1.0 candidate touches none of them. Manual reverse engineering of each function is required before this profile can be filled in.",
+  "recoveryNotes": {
+    "il2cppMetadataVersion": 31,
+    "il2cppMethodDefinitionStride": 36,
+    "il2cppTypeDefinitionStride": 88,
+    "methodRecordStride": 24,
+    "methodRecordLayout": ["codeRva", "methodInfo", "0x403"],
+    "calibratedRecordTableOffset157": 2392920,
+    "calibratedRecordTableOffset410": 2393592,
+    "calibratedMethodIndexDelta": -254464,
+    "notemoveMethodIndices410": {
+      "ClickControl": 29796,
+      "DragControl": 29800,
+      "FlickControl": 29804,
+      "HoldControl": 29809
+    },
+    "rejectedCandidates410": {
+      "ClickControl$$NoteMove": "0x1d7efc4",
+      "DragControl$$NoteMove": "0x1d7ea90",
+      "FlickControl$$NoteMove": "0x1d7fee0",
+      "HoldControl$$NoteMove": "0x1d7ff98"
+    }
+  }
+}
