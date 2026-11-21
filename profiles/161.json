@@ -6,29 +6,78 @@
   "il2cppSha256": "b216f4163d5394aae7be3e4b9fbca48fafdca78a19ed3259eab88dff347d1145",
   "il2cppBytes": 71736312,
   "complete": false,
-  "hooks": {},
-  "aux": {},
-  "blockedReason": "Hook prologues all changed: 4.1.0 moved from Unity 2019.4 to 2022.3. Two independent automatic recovery paths (instruction-skeleton matching over a 4-instruction index, and metadata method-name resolution through the il2cpp method record table) reproduce the audited 157 offsets exactly but produce mid-function or semantically wrong addresses here. Example: 157 ClickControl$$NoteMove touches fields +0x708/+0xbb8/+0xdb8, while the recovered 4.1.0 candidate touches none of them. Manual reverse engineering of each function is required before this profile can be filled in.",
-  "recoveryNotes": {
-    "il2cppMetadataVersion": 31,
-    "il2cppMethodDefinitionStride": 36,
-    "il2cppTypeDefinitionStride": 88,
-    "methodRecordStride": 24,
-    "methodRecordLayout": ["codeRva", "methodInfo", "0x403"],
-    "calibratedRecordTableOffset157": 2392920,
-    "calibratedRecordTableOffset410": 2393592,
-    "calibratedMethodIndexDelta": -254464,
-    "notemoveMethodIndices410": {
-      "ClickControl": 29796,
-      "DragControl": 29800,
-      "FlickControl": 29804,
-      "HoldControl": 29809
+  "hooks": {
+    "skinClickControl$$NoteMove": {
+      "rva": 30566048,
+      "prefix": "eb2bbc6de923016dfe5702a9f44f03a9",
+      "relocateMask": 0,
+      "recoveredFrom": 30743256,
+      "confidence": "confirmed"
     },
-    "rejectedCandidates410": {
-      "ClickControl$$NoteMove": "0x1d7efc4",
-      "DragControl$$NoteMove": "0x1d7ea90",
-      "FlickControl$$NoteMove": "0x1d7fee0",
-      "HoldControl$$NoteMove": "0x1d7ff98"
+    "skinDragControl$$NoteMove": {
+      "rva": 30566532,
+      "prefix": "eb2bbc6de923016dfe5702a9f44f03a9",
+      "relocateMask": 0,
+      "recoveredFrom": 30745196,
+      "confidence": "confirmed"
+    },
+    "skinFlickControl$$NoteMove": {
+      "rva": 30567172,
+      "prefix": "eb2bbc6de923016dfe5702a9f44f03a9",
+      "relocateMask": 0,
+      "recoveredFrom": 30746748,
+      "confidence": "confirmed"
+    },
+    "skinHoldControl$$NoteMove": {
+      "rva": 30569812,
+      "prefix": "ec0f1bfcebab006de9a3016dfe1700f9",
+      "relocateMask": 0,
+      "recoveredFrom": 30749516,
+      "confidence": "confirmed"
+    },
+    "record": {
+      "rva": 30160572,
+      "prefix": "fe0f1cf8f85f01a9f65702a9f44f03a9",
+      "relocateMask": 0,
+      "recoveredFrom": 30119976,
+      "confidence": "probable"
+    },
+    "perfect": {
+      "rva": 30974116,
+      "prefix": "ec0f1bfceb2b016de923026dfe5703a9",
+      "relocateMask": 0,
+      "recoveredFrom": 30763164,
+      "confidence": "probable"
+    },
+    "good": {
+      "rva": 30969536,
+      "prefix": "ec0f1bfceb2b016de923026dfe5703a9",
+      "relocateMask": 0,
+      "recoveredFrom": 30761656,
+      "confidence": "probable"
+    }
+  },
+  "aux": {},
+  "blockedReason": "Only 7 of 13 hooks are recovered, so this profile is NOT usable for a release. The four skin NoteMove hooks are confirmed by two independent signals (instruction-skeleton similarity 81-85%, and a unique BL caller at exactly the same distance as the audited 157 build: 9948 / 8564 / 8424 / 6040 bytes). The judgment hooks (click, drag, flick, hold, result, miss) are unresolved: their 157 prologues are 4-5 instruction stubs that are nearly identical across all four control classes, and unlike the skin hooks they have between 3 and 11 BL callers, so the caller-distance fingerprint is not unique and the skeleton match cannot separate them. Resolving them needs either a device-side trace or manual disassembly with named field cross-references.",
+  "recoveryNotes": {
+    "tool": "tools/recover_profile.py",
+    "method": "instruction-skeleton (48 instructions, address immediates masked) + caller-distance fingerprint, bijective assignment",
+    "selfCheck": "recover_profile.py recovers 13/13 hooks with byte-identical RVAs when the target is the 157 reference itself",
+    "confirmedHooks": [
+      "skinClickControl$$NoteMove",
+      "skinDragControl$$NoteMove",
+      "skinFlickControl$$NoteMove",
+      "skinHoldControl$$NoteMove"
+    ],
+    "unresolvedHooks": ["click", "drag", "flick", "hold", "result", "miss"],
+    "unresolvedReason": "multiple BL callers (3-11) defeat the caller-distance fingerprint; 4-5 instruction prologues defeat skeleton matching",
+    "rejectedApproach": "il2cpp metadata method-record table: on 4.1.0 it resolves NoteMove to 0x1d7efc4, which is 22236 bytes away from the address confirmed by skeleton + caller distance (0x1d846a0). That table is therefore not the method table this build's hooks need.",
+    "calibratedFacts": {
+      "il2cppMetadataVersion": 31,
+      "il2cppMethodDefinitionStride": 36,
+      "il2cppTypeDefinitionStride": 88,
+      "methodRecordStride": 24,
+      "methodRecordLayout": ["codeRva", "methodInfo", "0x403"]
     }
   }
 }
