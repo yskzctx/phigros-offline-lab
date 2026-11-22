@@ -30,6 +30,7 @@ C_TESTS = [
     ('native_dispatch', 'tests/native_dispatch_test.c', ['-pthread']),
     ('guard_result_regression', 'tests/guard_result_regression.c', ['-pthread']),
     ('skin_scale', 'tests/skin_scale_test.c', ['-lm']),
+    ('promotion_mode', 'tests/promotion_mode_test.c', []),
 ]
 MODULE_C_TESTS = [
     ('cloud_guard', 'modules/phigros/tests/cloud_guard_test.c', []),

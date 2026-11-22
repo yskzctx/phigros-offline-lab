@@ -3,7 +3,9 @@ import java.util.*;
 import java.math.BigDecimal;
 public final class ControlsConfig {
     /** 默认 AP、目标分数、目标准确率、判定保护。 */
-    public static final int MODE_AP=0,MODE_SCORE=1,MODE_ACCURACY=2,MODE_GUARD=3;
+    public static final int MODE_AP=0,MODE_SCORE=1,MODE_ACCURACY=2,MODE_GUARD=3,
+        /** Play normally; promote Good/Bad/Miss to Perfect afterwards. */
+        MODE_PROMOTE=4;
     public final int mode,target,accuracy,guardKind,guardScore;
     public final String encodedRules;
     public final Rule[] rules;
@@ -46,7 +48,7 @@ public final class ControlsConfig {
      * 残留的保护参数在 AP/分数/准确率模式下意外改变判定。
      */
     public static ControlsConfig parse(int mode,String target,String accuracy,String text,String guardKindValue,String guardScoreValue) {
-        if(mode<0||mode>MODE_GUARD)throw new IllegalArgumentException("未知游玩模式");
+        if(mode<0||mode>MODE_PROMOTE)throw new IllegalArgumentException("未知游玩模式");
         int t=1000000,a=10000;
         // Only the active target is required. Retain valid inactive values;
         // normalize empty/invalid hidden fields before saving or JNI dispatch.
@@ -55,7 +57,7 @@ public final class ControlsConfig {
         if(mode==MODE_ACCURACY)a=percentage(accuracy);
         else try{a=percentage(accuracy);}catch(IllegalArgumentException ignored){}
         int guard=0,guardTarget=0;
-        if(mode==MODE_GUARD){
+        if(mode==MODE_GUARD||mode==MODE_PROMOTE){
             guard=guardKind(guardKindValue);
             if(guard<1||guard>3)throw new IllegalArgumentException("判定保护须选择保护 AP、保护 FC 或保护分数");
             // 保护分数是「分数下限」。保护 AP / 保护 FC 不要求填，留空即 0；

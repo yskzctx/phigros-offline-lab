@@ -121,6 +121,44 @@ public final class RksEditor {
         return result;
     }
 
+    /**
+     * Unlock flags for songs the shipped dump does not cover.
+     *
+     * A song is gated by a `1key<Song>` / `2key<Song>` preference as well as its Record keys.
+     * The dump carries only 646 such flags against 329 catalog songs, and 191 songs have no
+     * flag at all - so those stay locked even when every Record exists.
+     *
+     * The value is copied from an existing flag of the same prefix rather than invented, so
+     * whatever encoding the game uses is preserved.
+     */
+    public static Map<String,String> missingUnlockFlags(Map<String,String> dump,
+                                                        java.util.List<RksPlanner.Chart> charts)
+            throws Exception {
+        // Learn what an unlock flag looks like from the dump itself.
+        String sampleOne = null, sampleTwo = null;
+        for (Map.Entry<String,String> entry : dump.entrySet()) {
+            String plain = decrypt(entry.getKey());
+            if (plain.startsWith("1key") && sampleOne == null) sampleOne = entry.getValue();
+            if (plain.startsWith("2key") && sampleTwo == null) sampleTwo = entry.getValue();
+        }
+        java.util.Set<String> covered = new java.util.HashSet<String>();
+        for (String enc : dump.keySet()) {
+            String plain = decrypt(enc);
+            if (plain.startsWith("1key")) covered.add(plain.substring(4));
+            else if (plain.startsWith("2key")) covered.add(plain.substring(4));
+        }
+        Map<String,String> result = new LinkedHashMap<String,String>();
+        for (RksPlanner.Chart chart : charts) {
+            if (chart.key == null) continue;
+            String song = chart.key.split("\\.")[0];
+            if (song.isEmpty() || covered.contains(song)) continue;
+            covered.add(song);   // only emit once per song
+            if (sampleOne != null) result.put(encrypt("1key" + song), sampleOne);
+            if (sampleTwo != null) result.put(encrypt("2key" + song), sampleTwo);
+        }
+        return result;
+    }
+
     public static String replaceOrAppend(String raw, Map<String,String> changes) throws IOException {
         Matcher m = ENTRY.matcher(raw); StringBuffer out = new StringBuffer();
         Set<String> matched = new HashSet<String>();
@@ -275,6 +313,9 @@ public final class RksEditor {
                             // and stayed locked. Give every catalog chart the save lacks a
                             // zero-score record - enough to unlock, without inventing a result.
                             updates.putAll(missingUnlockEntries(updates,charts));
+                            // Songs are also gated by 1key/2key flags, and the
+                            // dump leaves 191 catalog songs without one.
+                            updates.putAll(missingUnlockFlags(unlocks,charts));
                         }
                     }
                     File backup=new File(backups,Long.toString(System.currentTimeMillis()));

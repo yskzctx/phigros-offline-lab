@@ -164,6 +164,60 @@ static bool active(const void *score) {
 static bool active_plan(void) {
     return atomic_load(&ready) && (atomic_load(&enabled) || protect_mode());
 }
+// ---- post-judgment promotion (mode 4) ---------------------------------------
+// This is the "protection" the user asked for: judgments happen exactly as they would
+// normally - no synthetic touches, no plan-driven rewrite - and afterwards a Good/Bad/Miss
+// is replaced by a Perfect when the chosen protection covers it. It edits the score object's
+// own tallies, which is the same state the settlement screen and the record writer read, so
+// the promoted result is consistent everywhere.
+static atomic_int promote_count;
+
+// Which judgments this protection covers.
+//   1 = protect AP   : every non-Perfect becomes Perfect
+//   2 = protect FC   : Bad and Miss become Perfect (Good stays Good)
+//   3 = protect score: promote only while the score is below the floor
+static bool promote_covers(void *score,int judgment) {
+    int kind=chart_config.assist_guard;
+    if(kind<1||kind>3)return false;
+    if(judgment==0)return false;                 // already Perfect
+    if(kind==3) {
+        int floor=chart_config.guard_score;
+        if(floor<1)return false;
+        // Only rescue while below the floor; above it the real judgment stands.
+        int perfect=*integer(score,0x58),good=*integer(score,0x5c);
+        int bad=*integer(score,0x60),miss=*integer(score,0x64);
+        int total=perfect+good+bad+miss;
+        if(total<1)return true;
+        // Accuracy on the game's own 0..1000000 scale: Perfect counts fully, Good 65%.
+        // Compared against the floor as a running average, so a single Perfect (100%) is
+        // above a 900000 floor and is left alone, while a Good (65%) is below and promoted.
+        long long points=(long long)perfect*1000000LL+(long long)good*650000LL;
+        return points < (long long)floor*total;
+    }
+    if(kind==1)return true;                      // AP: anything not Perfect
+    return judgment>=2;                          // FC: Bad(2) or Miss(3) only
+}
+
+// Rewrite one judgment: undo the count the game just incremented, add a Perfect instead.
+static void promote_judgment(void *score,int judgment) {
+    if(!score||judgment<0||judgment>3)return;
+    if(!promote_covers(score,judgment))return;
+    static const int slot[4]={0x58,0x5c,0x60,0x64};
+    int *from=integer(score,slot[judgment]);
+    if(from&&*from>0)(*from)--;
+    int *to=integer(score,0x58);
+    if(to)(*to)++;
+    atomic_fetch_add(&promote_count,1);
+    __android_log_print(ANDROID_LOG_INFO,"PhigrosOffline",
+        "control.promote from=%d count=%d kind=%d",judgment,atomic_load(&promote_count),
+        chart_config.assist_guard);
+}
+
+// Is promotion the active protection? mode 4, with a kind selected.
+static bool promoting(void) {
+    return atomic_load(&ready) && chart_config.mode==4 && chart_config.assist_guard>=1;
+}
+
 static void miss(void *score,float code,const void *method) {
     if(score==early_bad_score&&code==early_bad_code){
         int i=ordinal(score,code);
@@ -171,12 +225,20 @@ static void miss(void *score,float code,const void *method) {
     }
     if(active(score))mark_hit(ordinal(score,code),1);
     miss_original(score,code,method);
+    if(promoting())promote_judgment(score,3);
 }
 static void good(void *score,float code,float time,Vec3 position,bool is_hold,const void *method) {
     if(active(score)){int i=ordinal(score,code);if(i&&plan_is_good(selected[i]))mark_hit(i,selected[i]);}
     good_call(score,code,time,position,is_hold,method);
+    if(promoting())promote_judgment(score,1);
 }
 static void perfect(void *score,float code,float time,Vec3 position,bool is_hold,const void *method) {
+    // Mode 4 never uses the planner: the game judges normally and the result is promoted
+    // afterwards if it came out worse than Perfect.
+    if(promoting()) {
+        perfect_original(score,code,time,position,is_hold,method);
+        return;
+    }
     if(!active_plan() || !score) {
         perfect_original(score,code,time,position,is_hold,method);return;
     }
@@ -269,6 +331,9 @@ static void *result(void *score,const void *method) {
 }
 
 static bool automatic(void *self, const void *method, judge_fn original, int type) {
+    // Promotion mode must not touch input at all - that is the whole point. Returning here
+    // leaves the original touch handling untouched, so the player plays as usual.
+    if (promoting()) return original(self,method);
     if (!active_plan() || !self) return original(self,method);
     void *note=pointer(self,type==0?0x40:0x38);
     void *progress=pointer(self,0x28);
@@ -431,10 +496,12 @@ JNIEXPORT jboolean JNICALL Java_com_phigros_offline_NativeControls_configure(JNI
     (void)cls;
     // mode 3 is judgment protection: same planning pipeline, different takeover
     // timing. It must be accepted here or the Java layer cannot save it at all.
-    if(mode<0||mode>3||target<0||target>1000000||accuracy<0||accuracy>10000||assist_guard<0||assist_guard>3||guard_score<0||guard_score>1000000||!words)return JNI_FALSE;
+    if(mode<0||mode>4||target<0||target>1000000||accuracy<0||accuracy>10000||assist_guard<0||assist_guard>3||guard_score<0||guard_score>1000000||!words)return JNI_FALSE;
     // Protection is only meaningful with a chosen protection kind. Requiring it
     // here keeps a stale goal_mode=3 from silently running as plain autoplay.
-    if(mode==3&&(assist_guard<1||(assist_guard==3&&guard_score<1)))return JNI_FALSE;
+    // Both protection modes need a kind; mode 4 additionally needs a floor only when
+    // protecting a score.
+    if((mode==3||mode==4)&&(assist_guard<1||(assist_guard==3&&guard_score<1)))return JNI_FALSE;
     int length=(*env)->GetArrayLength(env,words);
     if(length<1||length>MAX_CONFIG_WORDS)return JNI_FALSE;
     jint packed[MAX_CONFIG_WORDS];(*env)->GetIntArrayRegion(env,words,0,length,packed);
@@ -446,7 +513,8 @@ JNIEXPORT jboolean JNICALL Java_com_phigros_offline_NativeControls_configure(JNI
     // Protection keeps real touches authoritative while the score is still inside
     // the target, so blocking would defeat its purpose. Force it off regardless of
     // what the caller sent.
-    if(mode==3)c.block_touch=false;
+    // Neither protection mode injects touches.
+    if(mode==3||mode==4)c.block_touch=false;
     int cursor=typed?2:1;
     for(int i=0;i<c.rule_count;i++){
         if(cursor+(typed?7:6)>length)return JNI_FALSE;

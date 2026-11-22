@@ -54,22 +54,22 @@
     },
     "skinClickControl$$NoteMove": {
       "rva": 30940824,
-      "prefix": "eb2bbc6de923016dfe5702a9f44f03a9",
+      "prefix": "08e040b9480000355571f797e00314aa",
       "relocateMask": 0
     },
     "skinDragControl$$NoteMove": {
       "rva": 30942844,
-      "prefix": "eb2bbc6de923016dfe5702a9f44f03a9",
+      "prefix": "c01f01f0002446f90f6ff79728008052",
       "relocateMask": 0
     },
     "skinFlickControl$$NoteMove": {
       "rva": 30944380,
-      "prefix": "eb2bbc6de923016dfe5702a9f44f03a9",
+      "prefix": "e00315aae2031f2ab8de3094030340f9",
       "relocateMask": 0
     },
     "skinHoldControl$$NoteMove": {
       "rva": 30946124,
-      "prefix": "ec0f1bfcebab006de9a3016dfe1700f9",
+      "prefix": "28008052a8ca0c39880240f9085d40f9",
       "relocateMask": 0
     }
   },
