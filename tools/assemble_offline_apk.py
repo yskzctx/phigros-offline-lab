@@ -60,8 +60,14 @@ KNOWN_BASES = {
 
 # Entries that must come from the base untouched. Replacing any of these would
 # change the game itself rather than the wrapper around it.
+#
+# classes.dex belongs here: in this base the game's own code lives in classes.dex and
+# the modification lives in classes2.dex. An earlier version of this script wrote the
+# freshly compiled classes over classes.dex, which deleted the entire game - the APK
+# installed and then crashed on launch, and nothing in the report noticed because the
+# protected list did not cover dex files.
 PROTECTED_PREFIXES = ('assets/bin/Data/', 'assets/aa/')
-PROTECTED_SUFFIXES = ('libil2cpp.so', 'libunity.so')
+PROTECTED_SUFFIXES = ('libil2cpp.so', 'libunity.so', 'classes.dex')
 
 NATIVE_TARGETS = [
     # (output name inside lib/arm64-v8a, source file, extra defines)
@@ -265,7 +271,11 @@ def repack(base: Path, dex: Path, natives: dict[str, Path], work: Path,
     This also means a 3 GB base never has to be decompressed or held in memory.
     """
     unsigned = work / 'unsigned.apk'
-    replaced = {'classes.dex', 'AndroidManifest.xml'}
+    # The base APK keeps the game in classes.dex (6 MB) and the previous modification
+    # in classes2.dex (50 KB). The newly compiled classes must therefore REPLACE
+    # classes2.dex, not classes.dex: overwriting classes.dex drops the entire game and
+    # the result installs but crashes on launch.
+    replaced = {'classes2.dex', 'AndroidManifest.xml'}
     replaced.update(f'lib/arm64-v8a/{leaf}' for leaf in natives)
     replaced.update(target_name for _source, target_name in ASSET_SOURCES)
 
@@ -359,7 +369,7 @@ def repack(base: Path, dex: Path, natives: dict[str, Path], work: Path,
                                  offset)
             central.append(record + name_bytes)
 
-        write_new('classes.dex', dex.read_bytes(), True)
+        write_new('classes2.dex', dex.read_bytes(), True)
         if patched_manifest is not None:
             write_new('AndroidManifest.xml', patched_manifest, True)
         for leaf, path in natives.items():

@@ -298,6 +298,24 @@ def main() -> int:
         else:
             print('  SKIP test script missing')
 
+    # A rebuilt APK that overwrote the game's own classes.dex installs fine and then
+    # crashes on launch, so the dex split is checked whenever a build exists.
+    print('== rebuilt APK keeps the game dex ==')
+    dex_check = REPO / 'tools' / 'verify_apk_dex.py'
+    if dex_check.is_file():
+        code, output = run([sys.executable, str(dex_check)], REPO)
+        built = 'not built' not in output.lower()
+        print(f'  {"PASS" if code == 0 else "FAIL"} classes.dex unchanged, modification in classes2.dex')
+        if not built:
+            print('       (no build present; run assemble_offline_apk.py first)')
+        for line in output.splitlines():
+            if line.startswith('FAIL'):
+                print(f'       {line}')
+        total_pass += 1 if code == 0 else 0
+        total_fail += 0 if code == 0 else 1
+    else:
+        print('  SKIP verifier missing')
+
     print()
     print(f'{total_pass} passed, {total_fail} failed')
     return 1 if total_fail else 0
