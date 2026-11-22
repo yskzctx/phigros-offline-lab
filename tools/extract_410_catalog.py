@@ -1,36 +1,54 @@
-"""Build the 4.1.0 chart catalog from the Addressables bundles.
+"""Rebuild the 4.1.0 chart catalog from the Addressables key table.
 
-Each chart is a TextAsset named Chart_EZ / Chart_HD / Chart_IN / Chart_AT holding the
-chart JSON. The chart itself does not carry the song id, but the bundle's asset container
-does - so this walks every bundle, records which song container each chart asset belongs
-to, and emits the catalog in the existing `<song>.<artist>.<idx>.Record.<DIFF>` form.
+Two findings make this work:
 
-The difficulty constant is not in the chart JSON, so the value written is the chart's own
-level indicator where present; where it is absent the row is still emitted with the
-difficulty it was found under, and the constant is filled from the existing 157 catalog
-when the song is not new. New songs get their constant from the chart JSON if exposed,
-otherwise the row is recorded as unknown rather than invented.
+  * each key carries a type tag, and tag 1 means the payload is UTF-16LE (the non-ASCII
+    song titles: 華灯爱, 青丘, ニライカナイ...). Reading everything as UTF-8 both produced
+    mojibake and broke the parse at the first such key.
+  * the addresses are `Assets/Tracks/<Song>.<Artist>.<index>/Chart_<DIFF>.json`, which maps
+    one-to-one onto the `<song>.<artist>.<index>.Record.<DIFF>` preference keys that
+    chart-catalog.tsv holds.
+
+So the catalog is regenerated from the build's own catalog.json. Difficulty constants are
+carried over from the existing table where a chart is unchanged, and left blank for charts
+the old table never had - never invented.
 """
 from __future__ import annotations
 
+import base64
 import json
-import re
 import sys
 from pathlib import Path
 
-import UnityPy
+CATALOG = Path(r'I:\dsh\work\410-dec\assets\aa\catalog.json')
+REPO = Path(r'I:\dsh\work\phigros-offline-lab')
+OLD = REPO / 'data' / 'chart-catalog.tsv'
+OUT = REPO / 'data' / 'chart-catalog-410.tsv'
+NEW_LIST = REPO / 'data' / 'chart-catalog-410-new.txt'
 
-AA = Path(r'I:\dsh\work\410-dec\assets\aa\Android')
-CHART = re.compile(r'^Chart_(EZ|HD|IN|AT)$')
-SONGISH = re.compile(r'^[A-Za-z][A-Za-z0-9_\-]{2,40}$')
 
-
-def song_from_container(container: str) -> str:
-    """The bundle container path names the song, e.g. .../charts/SongName/Chart_IN."""
-    parts = [p for p in container.replace('\\', '/').split('/') if p]
-    if len(parts) >= 2:
-        return parts[-2]
-    return ''
+def decode_keys(raw: bytes) -> tuple[list[str], int]:
+    """Decode the key table; returns (keys, keys_consumed_before_stop)."""
+    count = int.from_bytes(raw[:4], 'little')
+    pos = 4
+    keys: list[str] = []
+    for _ in range(count):
+        if pos + 5 > len(raw):
+            break
+        tag = raw[pos]
+        pos += 1
+        length = int.from_bytes(raw[pos:pos + 4], 'little')
+        pos += 4
+        if length > 8192 or pos + length > len(raw):
+            break
+        payload = raw[pos:pos + length]
+        pos += length
+        if tag == 1 or b'\x00' in payload:
+            text = payload.decode('utf-16-le', 'replace')
+        else:
+            text = payload.decode('utf-8', 'replace')
+        keys.append(text)
+    return keys, len(keys)
 
 
 def main() -> int:
@@ -39,78 +57,57 @@ def main() -> int:
     except Exception:
         pass
 
-    out_path = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(
-        r'I:\dsh\work\phigros-offline-lab\data\chart-catalog-410.tsv')
+    data = json.loads(CATALOG.read_text(encoding='utf-8', errors='replace'))
+    keys, decoded = decode_keys(base64.b64decode(data['m_KeyDataString']))
+    print(f'keys decoded: {decoded}')
 
-    bundles = sorted(AA.glob('*.bundle'))
-    print(f'bundles: {len(bundles)}')
-
-    rows: dict[tuple[str, str], dict] = {}
-    scanned = 0
-    failed = 0
-
-    for path in bundles:
-        scanned += 1
-        if scanned % 200 == 0:
-            print(f'  ... {scanned}/{len(bundles)}  charts={len(rows)}', flush=True)
-        try:
-            env = UnityPy.load(str(path))
-        except Exception:
-            failed += 1
+    charts: dict[str, str] = {}
+    for key in keys:
+        if not key.startswith('Assets/Tracks/') or 'Chart_' not in key:
             continue
-        for obj in env.objects:
-            if obj.type.name != 'TextAsset':
-                continue
-            try:
-                data = obj.read()
-                name = getattr(data, 'm_Name', '') or ''
-            except Exception:
-                continue
-            m = CHART.match(name)
-            if not m:
-                continue
-            difficulty = m.group(1)
-            # The container that holds this asset gives the song.
-            container = ''
-            try:
-                container = obj.container or ''
-            except Exception:
-                pass
-            song = song_from_container(container)
-            if not song:
-                continue
-            script = getattr(data, 'm_Script', '') or ''
-            if isinstance(script, bytes):
-                script = script.decode('utf-8', 'replace')
-            info = {'difficulty': difficulty, 'container': container, 'bytes': len(script)}
-            # Some charts expose a level; record it if so, never invent one.
-            try:
-                parsed = json.loads(script)
-                for key in ('level', 'difficulty', 'constant', 'rank'):
-                    if key in parsed and isinstance(parsed[key], (int, float)):
-                        info['constant'] = parsed[key]
-                        break
-            except Exception:
-                pass
-            rows[(song, difficulty)] = info
+        parts = key.split('/')
+        if len(parts) < 4:
+            continue
+        track = parts[2]
+        diff = parts[3].replace('Chart_', '').replace('.json', '')
+        if track and diff:
+            charts[f'{track}.Record.{diff}'] = diff
 
-    print(f'\nscanned {scanned} bundles ({failed} unreadable)')
-    print(f'charts found: {len(rows)}')
-    songs = {s for s, _ in rows}
-    print(f'songs found: {len(songs)}')
+    songs = {k.split('.')[0] for k in charts}
+    print(f'charts: {len(charts)}   songs: {len(songs)}')
 
-    by_diff: dict[str, int] = {}
-    for _, d in rows:
-        by_diff[d] = by_diff.get(d, 0) + 1
-    print(f'by difficulty: {dict(sorted(by_diff.items()))}')
+    old: dict[str, float] = {}
+    if OLD.is_file():
+        for line in OLD.read_text(encoding='utf-8').splitlines():
+            p = line.split('\t')
+            if len(p) == 2:
+                try:
+                    old[p[0]] = float(p[1])
+                except ValueError:
+                    pass
+    print(f'157 catalog entries: {len(old)}')
 
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    with out_path.open('w', encoding='utf-8', newline='\n') as f:
-        f.write('# song\tdifficulty\tbytes\tcontainer\n')
-        for (song, diff), info in sorted(rows.items()):
-            f.write(f'{song}\t{diff}\t{info["bytes"]}\t{info["container"]}\n')
-    print(f'wrote {out_path}')
-    print('sample songs:', sorted(songs)[:10])
+    new_keys = sorted(k for k in charts if k not in old)
+    carried = len(charts) - len(new_keys)
+    print(f'  carried over: {carried}')
+    print(f'  new in 4.1.0: {len(new_keys)}')
+    for k in new_keys[:25]:
+        print(f'     + {k}')
+
+    OUT.parent.mkdir(parents=True, exist_ok=True)
+    with OUT.open('w', encoding='utf-8', newline='\n') as f:
+        for key in sorted(charts):
+            constant = old.get(key)
+            f.write(f'{key}\t{constant if constant is not None else ""}\n')
+    print(f'\nwrote {OUT}')
+
+    with NEW_LIST.open('w', encoding='utf-8', newline='\n') as f:
+        for key in new_keys:
+            f.write(key + '\n')
+    print(f'wrote {NEW_LIST}')
+
+    missing = [k for k in old if k not in charts]
+    print(f'\nstill missing from the extract: {len(missing)}')
     return 0
 
 

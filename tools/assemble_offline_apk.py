@@ -78,10 +78,22 @@ NATIVE_TARGETS = [
     ('libphigros_privacy.so', 'src/privacy.c', []),
     ('libphigros_skins.so', 'src/skins.c', []),
 ]
-ASSET_SOURCES = [
-    ('ui/controls-ui.html', 'assets/offline/controls-ui.html'),
-    ('data/chart-catalog.tsv', 'assets/offline/chart-catalog.tsv'),
-]
+def asset_sources(catalog: Path | None = None) -> list[tuple[str, str]]:
+    """Repo-relative sources copied into assets/offline/.
+
+    The chart catalog decides which songs the unlock/RKS features can see, so it is
+    selectable: the default is the 157 table, and --catalog picks another (the 4.1.0 table
+    is data/chart-catalog-410.tsv, regenerated from that build's Addressables keys).
+    """
+    catalog_path = catalog if catalog is not None else REPO / 'data' / 'chart-catalog.tsv'
+    try:
+        catalog_rel = str(catalog_path.resolve().relative_to(REPO.resolve()))
+    except ValueError:
+        catalog_rel = str(catalog_path)
+    return [
+        ('ui/controls-ui.html', 'assets/offline/controls-ui.html'),
+        (catalog_rel, 'assets/offline/chart-catalog.tsv'),
+    ]
 
 
 def digest(path: Path) -> str:
@@ -264,7 +276,8 @@ def patch_manifest_version(manifest: bytes, version_code: int | None, version_na
 
 def repack(base: Path, dex: Path, natives: dict[str, Path], work: Path,
            version_code: int | None = None, version_name: str | None = None,
-           manifest_override: Path | None = None) -> Path:
+           manifest_override: Path | None = None,
+           catalog: Path | None = None) -> Path:
     """Rebuild the APK by copying the base's raw compressed bytes verbatim.
 
     Copying entries through ZipFile.open() would recompress them and let Python add
@@ -283,7 +296,8 @@ def repack(base: Path, dex: Path, natives: dict[str, Path], work: Path,
     # the result installs but crashes on launch.
     replaced = {'classes2.dex', 'AndroidManifest.xml'}
     replaced.update(f'lib/arm64-v8a/{leaf}' for leaf in natives)
-    replaced.update(target_name for _source, target_name in ASSET_SOURCES)
+    sources = asset_sources(catalog)
+    replaced.update(target_name for _source, target_name in sources)
 
     patched_manifest = None
     if manifest_override is not None:
@@ -386,7 +400,7 @@ def repack(base: Path, dex: Path, natives: dict[str, Path], work: Path,
             write_new('AndroidManifest.xml', patched_manifest, True)
         for leaf, path in natives.items():
             write_new(f'lib/arm64-v8a/{leaf}', path.read_bytes(), False)
-        for source_path, target_name in ASSET_SOURCES:
+        for source_path, target_name in sources:
             local = REPO / source_path
             if local.is_file():
                 write_new(target_name, local.read_bytes(), True)
@@ -487,6 +501,7 @@ def main() -> int:
     parser.add_argument('--version-name')
     parser.add_argument('--allow-unknown-base', action='store_true')
     parser.add_argument('--check-only', action='store_true', help='validate the base and sources, build nothing')
+    parser.add_argument('--catalog', type=Path, help='chart catalog TSV to ship (default: data/chart-catalog.tsv; use data/chart-catalog-410.tsv for a 4.1.0 build)')
     parser.add_argument('--manifest', type=Path, help='prebuilt binary AndroidManifest.xml to use instead of the base manifest (needed to declare the offline activities)')
     args = parser.parse_args()
 
@@ -532,7 +547,8 @@ def main() -> int:
         for leaf, path in natives.items():
             print(f'   {leaf} {path.stat().st_size} bytes')
         print('== repacking ==')
-        unsigned = repack(base, dex, natives, work, args.version_code, args.version_name, args.manifest)
+        unsigned = repack(base, dex, natives, work, args.version_code, args.version_name,
+                    args.manifest, args.catalog)
         print('== aligning and signing ==')
         signed = align_and_sign(args.sdk, args.build_tools, unsigned, work,
                                 args.keystore.resolve(), args.alias, args.password_file.resolve())

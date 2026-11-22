@@ -23,15 +23,28 @@ public strictfp final class RksPlanner {
         for(int i=0;i<Math.min(3,phi.size());i++)apSum+=phi.get(i);
         return (sum+apSum)/30f;
     }
+    /**
+     * The charts whose difficulty constant is known.
+     *
+     * A build can carry charts whose constant its data does not expose; those are stored
+     * with NaN so unlocking still works. They must never reach the RKS arithmetic, where
+     * NaN would propagate through min/max and sorting and silently wreck every number.
+     */
+    static List<Chart> known(List<Chart> charts) {
+        List<Chart> result=new ArrayList<Chart>(charts.size());
+        for(Chart c:charts)if(!Float.isNaN(c.difficulty))result.add(c);
+        return result;
+    }
     public static float maximum(List<Chart> charts) {
-        ArrayList<Record> all=new ArrayList<Record>();for(Chart c:charts)all.add(new Record(c,100,true));return calculate(all);
+        ArrayList<Record> all=new ArrayList<Record>();for(Chart c:known(charts))all.add(new Record(c,100,true));return calculate(all);
     }
     public static float minimumPositive(List<Chart> charts) {
-        float minimum=Float.POSITIVE_INFINITY;for(Chart c:charts)minimum=Math.min(minimum,c.difficulty);
+        float minimum=Float.POSITIVE_INFINITY;for(Chart c:known(charts))minimum=Math.min(minimum,c.difficulty);
         return minimum/270f;
     }
     private static double variation(String s) {return (Integer.toUnsignedLong(s.hashCode())%10007)/10007.0;}
     public static List<Record> allAP(List<Chart> charts) {
+        charts=known(charts);
         ArrayList<Record> records=new ArrayList<Record>();
         for(Chart c:charts)records.add(new Record(c,100f,true));
         finishScores(records);return records;
@@ -52,6 +65,7 @@ public strictfp final class RksPlanner {
         return result;
     }
     public static List<Record> generate(List<Chart> charts,float target) {
+        charts=known(charts);
         float maximum=maximum(charts);
         float shownMaximum=Math.round(maximum*100f)/100f;
         if(charts.size()<30 || !Float.isFinite(target) || target<0 || target>shownMaximum)

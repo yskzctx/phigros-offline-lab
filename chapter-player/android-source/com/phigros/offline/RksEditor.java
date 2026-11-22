@@ -33,7 +33,14 @@ public final class RksEditor {
     static List<RksPlanner.Chart> catalog(Context c)throws IOException {
         ArrayList<RksPlanner.Chart> result=new ArrayList<RksPlanner.Chart>();
         try(BufferedReader r=new BufferedReader(new InputStreamReader(c.getAssets().open("offline/chart-catalog.tsv"),"UTF-8"))){
-            String s;while((s=r.readLine())!=null){String[] p=s.split("\t");if(p.length!=2)throw new IOException("谱面定数目录损坏");result.add(new RksPlanner.Chart(p[0],Float.parseFloat(p[1])));}
+            String s;while((s=r.readLine())!=null){
+                // Two columns: key and difficulty constant. A blank constant is a chart
+                // the game has but whose constant this build's data does not expose -
+                // kept for unlocking, excluded from RKS arithmetic.
+                String[] p=s.split("\t",-1);if(p.length!=2)throw new IOException("谱面定数目录损坏");
+                if(p[0].trim().isEmpty())continue;
+                result.add(new RksPlanner.Chart(p[0],p[1].trim().isEmpty()?Float.NaN:Float.parseFloat(p[1])));
+            }
         }
         // The entry count is not fixed: a game update adds songs, and the catalog is
         // regenerated for each supported build. What must hold is that the table is
@@ -43,7 +50,10 @@ public final class RksEditor {
         HashSet<String> seen=new HashSet<String>();
         for(RksPlanner.Chart chart:result){
             if(!seen.add(chart.key))throw new IOException("谱面定数目录有重复条目："+chart.key);
-            if(!Float.isFinite(chart.difficulty)||chart.difficulty<=0f||chart.difficulty>100f)
+            // NaN is the documented "unknown constant" marker; anything else must be a
+            // plausible constant so a corrupt table is still caught.
+            if(!Float.isNaN(chart.difficulty)
+               &&(!Float.isFinite(chart.difficulty)||chart.difficulty<=0f||chart.difficulty>100f))
                 throw new IOException("谱面定数超出合理范围："+chart.key);
         }
         return result;
