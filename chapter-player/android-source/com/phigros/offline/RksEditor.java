@@ -35,7 +35,18 @@ public final class RksEditor {
         try(BufferedReader r=new BufferedReader(new InputStreamReader(c.getAssets().open("offline/chart-catalog.tsv"),"UTF-8"))){
             String s;while((s=r.readLine())!=null){String[] p=s.split("\t");if(p.length!=2)throw new IOException("谱面定数目录损坏");result.add(new RksPlanner.Chart(p[0],Float.parseFloat(p[1])));}
         }
-        if(result.size()!=1037)throw new IOException("谱面目录版本不一致");return result;
+        // The entry count is not fixed: a game update adds songs, and the catalog is
+        // regenerated for each supported build. What must hold is that the table is
+        // non-empty and internally consistent (unique keys, finite constants), which
+        // catches a truncated or corrupt asset without pinning one version's size.
+        if(result.isEmpty())throw new IOException("谱面定数目录为空");
+        HashSet<String> seen=new HashSet<String>();
+        for(RksPlanner.Chart chart:result){
+            if(!seen.add(chart.key))throw new IOException("谱面定数目录有重复条目："+chart.key);
+            if(!Float.isFinite(chart.difficulty)||chart.difficulty<=0f||chart.difficulty>100f)
+                throw new IOException("谱面定数超出合理范围："+chart.key);
+        }
+        return result;
     }
     public static float validate(Context c,String input)throws IOException {
         if(!input.trim().matches("[0-9]+(\\.[0-9]{1,4})?"))throw new IllegalArgumentException("RKS 支持最多四位小数，例如 16.25");
@@ -236,9 +247,12 @@ public final class RksEditor {
                         try(InputStream in=new ByteArrayInputStream(edited.getBytes(StandardCharsets.UTF_8))){LaunchActivity.copyAtomic(in,new File(txn,name));}
                     }
                     meta.setProperty("backup",backup.getAbsolutePath());
+                    // The catalogue size is per-build, so report it from the loaded
+                    // table rather than printing a fixed number that goes stale.
+                    int chartCount=catalog(c).size();
                     if(unlockOnly)meta.setProperty("status","全曲目与全收藏品已解锁");
-                    else if(allAP)meta.setProperty("status",String.format(Locale.ROOT,"全解锁 ＋ 历史 RKS %.4f，AP %d / 1037",RksPlanner.calculate(records),ap));
-                    else meta.setProperty("status",records==null?"初始 Data 已准备：至少 10000 MB":String.format(Locale.ROOT,"历史 RKS %.4f，AP %d / 1037",RksPlanner.calculate(records),ap));
+                    else if(allAP)meta.setProperty("status",String.format(Locale.ROOT,"全解锁 ＋ 历史 RKS %.4f，AP %d / %d",RksPlanner.calculate(records),ap,chartCount));
+                    else meta.setProperty("status",records==null?"初始 Data 已准备：至少 10000 MB":String.format(Locale.ROOT,"历史 RKS %.4f，AP %d / %d",RksPlanner.calculate(records),ap,chartCount));
                 }
                 if(seedData)meta.setProperty("dataSeeded","true");
                 ByteArrayOutputStream out=new ByteArrayOutputStream();meta.store(out,"Prepared independent local history transaction");
