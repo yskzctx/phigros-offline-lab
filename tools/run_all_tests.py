@@ -298,6 +298,19 @@ def main() -> int:
         else:
             print('  SKIP test script missing')
 
+        print('== the module never hides or blocks login ==')
+        script = REPO / 'tools' / 'check_module_no_login_block.py'
+        if script.is_file():
+            code, output = run([sys.executable, str(script)], REPO)
+            print(f'  {"PASS" if code == 0 else "FAIL"} module leaves login untouched')
+            for line in output.splitlines():
+                if line.startswith(('FAIL', 'SKIP')):
+                    print(f'       {line}')
+            total_pass += 1 if code == 0 else 0
+            total_fail += 0 if code == 0 else 1
+        else:
+            print('  SKIP guard script missing')
+
         print('== network boundary: offline blocked, modules inherit host ==')
         script = MODULE / 'tests' / 'network_boundary_test.py'
         if script.is_file():
