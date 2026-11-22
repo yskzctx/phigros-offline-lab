@@ -134,7 +134,7 @@ details.adv>div{padding:0 14px 14px}
         <select id="guard-type">
           <option value="1">保护 AP（不许掉出 Perfect）</option>
           <option value="2">保护 FC（不许 Bad / Miss）</option>
-          <option value="3">保护分数（不许低于目标）</option>
+          <option value="3">保护分数（保护指定分数）</option>
         </select>
       </label>
       <label class="field hidden" id="guard-field"><span>保底分数 · 1～1000000</span>
@@ -314,7 +314,7 @@ $('force-save').onclick=()=>{const v={enabled:$('force-enabled').checked,score:$
 $('force-clear').onclick=()=>{['force-score','force-accuracy','force-perfect','force-good','force-bad','force-miss','force-combo','force-early','force-late'].forEach(id=>$(id).value='');$('force-enabled').checked=false;$('force-early-late-on').checked=false;$('force-symbol').value='0';$('force-label').textContent='关闭';$('force-early-late-label').textContent='跟随判定';toast('已清空，记得点保存')};
 window.receive=function(s){$('auto').checked=!!s.auto;$('auto').disabled=false;$('auto-label').textContent=s.auto?'开启':'关闭';if((s.mode||0)===3&&s.auto){$('auto').checked=true;$('auto-label').textContent='开启'}$('skin-state').textContent=s.skin||'默认皮肤';
  if(!initial||s.reload){initial=true;dirty=false;$('block-touch').checked=s.blockTouch!==false;guardKind=s.mode===4?(+s.assistGuard||1):guardKind;$('guard-score').value=(s.mode===4&&s.guardScore>0)?String(s.guardScore):'';setMode(s.mode||0);$('score').value=s.score;$('accuracy').value=s.accuracy;rules=(s.rules||[]).map(r=>({...r,noteType:r.noteType||0}));renderRules();$('rks').value=s.rksTarget||'';showDirty()}
- let text=s.runtime||'在选曲页保存，下局使用新设置。';$('runtime').replaceChildren();let strong=document.createElement('strong');strong.textContent=s.mode===4?'判定保护已开启（不改输入）':(s.auto?'自动游玩已开启':'当前为手动模式');$('runtime').append(strong,document.createTextNode(text));let history=s.history||'';$('history-state').textContent=history;$('history-state').classList.toggle('hidden',!history);
+ let text=s.runtime||'在选曲页保存，下局使用新设置。';$('runtime').replaceChildren();let strong=document.createElement('strong');strong.textContent=s.mode===4?(s.auto?'判定保护已开启（不改输入）':'判定保护待开启：打开自动游玩后生效'):(s.auto?'自动游玩已开启':'当前为手动模式');$('runtime').append(strong,document.createTextNode(text));let history=s.history||'';$('history-state').textContent=history;$('history-state').classList.toggle('hidden',!history);
  if(s.force){$('force-enabled').checked=!!s.force.enabled;$('force-label').textContent=s.force.enabled?'开启':'关闭';$('force-score').value=s.force.score||'';$('force-accuracy').value=s.force.accuracy||'';$('force-perfect').value=s.force.perfect||'';$('force-good').value=s.force.good||'';$('force-bad').value=s.force.bad||'';$('force-miss').value=s.force.miss||'';$('force-combo').value=s.force.combo||'';$('force-early-late-on').checked=!!s.force.earlyLateOn;$('force-early-late-label').textContent=s.force.earlyLateOn?'指定':'跟随判定';$('force-early').value=s.force.early||'';$('force-late').value=s.force.late||'';$('force-symbol').value=String(s.force.symbol||0)}
  if(s.forceState){$('force-state').textContent=s.forceState;$('force-state').classList.toggle('hidden',!s.forceState)}
  if(s.save){$('save-state').textContent=s.save.summary||'';renderBackups(s.save.backups)}

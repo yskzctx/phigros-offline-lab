@@ -182,6 +182,9 @@ static bool promote_covers(void *score,int judgment) {
     if(kind<1||kind>3)return false;
     if(judgment==0)return false;                 // already Perfect
     if(kind==3) {
+        // Protect-score only rescues Bad and Miss, and it rescues them to Good (handled in
+        // promote_judgment). A Good note is already acceptable under a score floor.
+        if(judgment<2)return false;
         int floor=chart_config.guard_score;
         if(floor<1)return false;
         // Only rescue while below the floor; above it the real judgment stands.
@@ -206,17 +209,24 @@ static void promote_judgment(void *score,int judgment) {
     static const int slot[4]={0x58,0x5c,0x60,0x64};
     int *from=integer(score,slot[judgment]);
     if(from&&*from>0)(*from)--;
-    int *to=integer(score,0x58);
+    // Where the rescued note lands: protect-score turns Bad/Miss into Good (it is protecting a
+    // floor, not granting full marks); the other kinds promote to Perfect.
+    int target=chart_config.assist_guard==3?0x5c:0x58;
+    int *to=integer(score,target);
     if(to)(*to)++;
     atomic_fetch_add(&promote_count,1);
     __android_log_print(ANDROID_LOG_INFO,"PhigrosOffline",
-        "control.promote from=%d count=%d kind=%d",judgment,atomic_load(&promote_count),
-        chart_config.assist_guard);
+        "control.promote from=%d to=%d count=%d kind=%d",judgment,target==0x5c?1:0,
+        atomic_load(&promote_count),chart_config.assist_guard);
 }
 
 // Is promotion the active protection? mode 4, with a kind selected.
 static bool promoting(void) {
-    return atomic_load(&ready) && chart_config.mode==4 && chart_config.assist_guard>=1;
+    // Requires the auto toggle (the master enable) to be on: protection is part of the tool, so
+    // it does nothing while the tool is off. In mode 4 the auto toggle does not inject input -
+    // automatic() returns the original - so this only gates the rewrite.
+    return atomic_load(&ready) && atomic_load(&enabled)
+        && chart_config.mode==4 && chart_config.assist_guard>=1;
 }
 
 static void miss(void *score,float code,const void *method) {

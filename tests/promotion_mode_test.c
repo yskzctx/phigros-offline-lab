@@ -32,13 +32,17 @@ static void set_tally(int offset, int value) { *integer(score_obj, offset) = val
 int main(void) {
     /* ---- 1. promoting() gate --------------------------------------------- */
     atomic_store(&ready, true);
-    atomic_store(&enabled, false);          /* no autoplay: promotion must not need it */
+    atomic_store(&enabled, false);          /* tool off: promotion must do nothing */
 
     chart_config.mode = 3;
     chart_config.assist_guard = 1;
     assert(!promoting());                   /* mode 3 is the planner, not promotion */
 
     chart_config.mode = 4;
+    chart_config.assist_guard = 1;
+    assert(!promoting());                   /* auto toggle off -> inactive */
+
+    atomic_store(&enabled, true);           /* auto on: the tool is active */
     chart_config.assist_guard = 0;
     assert(!promoting());                   /* no kind selected */
 
@@ -91,17 +95,23 @@ int main(void) {
     assert(tally(0x60) == 0);
     assert(tally(0x58) == 1);
 
-    /* ---- 5. protect score: only below the floor --------------------------- */
+    /* ---- 5. protect score: rescues Bad/Miss to Good, leaves Good alone ---- */
     reset_score();
     chart_config.assist_guard = 3;
     chart_config.guard_score = 900000;
     /* 1 Perfect of 1 total = 100% - above the floor, so nothing is promoted. */
     set_tally(0x58, 1);
     assert(!promote_covers(score_obj, 1));
-    /* 1 Good of 1 total = 65% - below the floor, so it is promoted. */
+    /* Good is never covered under a score floor. */
+    assert(!promote_covers(score_obj, 1));
+    /* A Miss of 1 total = 0% - below the floor, so it is rescued to Good. */
     reset_score();
-    set_tally(0x5c, 1);
-    assert(promote_covers(score_obj, 1));
+    set_tally(0x64, 1);
+    assert(promote_covers(score_obj, 3));
+    promote_judgment(score_obj, 3);
+    assert(tally(0x64) == 0);               /* Miss removed */
+    assert(tally(0x5c) == 1);               /* landed in Good, not Perfect */
+    assert(tally(0x58) == 0);
 
     /* ---- 6. no kind means nothing happens --------------------------------- */
     reset_score();

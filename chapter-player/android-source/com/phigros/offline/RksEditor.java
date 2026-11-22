@@ -122,41 +122,51 @@ public final class RksEditor {
     }
 
     /**
-     * Unlock flags for songs the shipped dump does not cover.
+     * Unlock flags for catalog songs the dump does not cover.
      *
-     * A song is gated by a `1key<Song>` / `2key<Song>` preference as well as its Record keys.
-     * The dump carries only 646 such flags against 329 catalog songs, and 191 songs have no
-     * flag at all - so those stay locked even when every Record exists.
+     * A song unlocks through any of "<n>key<Song>" (n = 0..3) or "<Song>Unlocked". The 157-era dump
+     * only covers part of the 4.1.0 catalog, and it writes names with spaces ("1keyAbout The
+     * Universe") while the catalog uses none ("AboutTheUniverse"), so the comparison must be
+     * normalized or ~113 already-unlocked songs look missing.
      *
-     * The value is copied from an existing flag of the same prefix rather than invented, so
-     * whatever encoding the game uses is preserved.
+     * For each song still uncovered, every family is written with value "1" (what the dump uses for
+     * a fully unlocked song - songs with four difficulties also carry 1, so it is not a cap) plus
+     * "<Song>Unlocked" = "True". Extra families are ignored by the game if unused.
      */
     public static Map<String,String> missingUnlockFlags(Map<String,String> dump,
                                                         java.util.List<RksPlanner.Chart> charts)
             throws Exception {
-        // Learn what an unlock flag looks like from the dump itself.
-        String sampleOne = null, sampleTwo = null;
-        for (Map.Entry<String,String> entry : dump.entrySet()) {
-            String plain = decrypt(entry.getKey());
-            if (plain.startsWith("1key") && sampleOne == null) sampleOne = entry.getValue();
-            if (plain.startsWith("2key") && sampleTwo == null) sampleTwo = entry.getValue();
-        }
         java.util.Set<String> covered = new java.util.HashSet<String>();
-        for (String enc : dump.keySet()) {
-            String plain = decrypt(enc);
-            if (plain.startsWith("1key")) covered.add(plain.substring(4));
-            else if (plain.startsWith("2key")) covered.add(plain.substring(4));
+        for (String encKey : dump.keySet()) {
+            String plain;
+            try { plain = decrypt(encKey); } catch (Exception e) { continue; }
+            java.util.regex.Matcher m = java.util.regex.Pattern.compile("^[0-9]key(.+)$").matcher(plain);
+            if (m.matches()) { covered.add(normalizeSong(m.group(1))); continue; }
+            if (plain.endsWith("Unlocked")) covered.add(normalizeSong(plain.substring(0, plain.length() - 8)));
         }
+        String one = encrypt("1");
+        String truth = encrypt("True");
         Map<String,String> result = new LinkedHashMap<String,String>();
         for (RksPlanner.Chart chart : charts) {
             if (chart.key == null) continue;
             String song = chart.key.split("\\.")[0];
-            if (song.isEmpty() || covered.contains(song)) continue;
-            covered.add(song);   // only emit once per song
-            if (sampleOne != null) result.put(encrypt("1key" + song), sampleOne);
-            if (sampleTwo != null) result.put(encrypt("2key" + song), sampleTwo);
+            if (song.isEmpty() || covered.contains(normalizeSong(song))) continue;
+            covered.add(normalizeSong(song));
+            for (int d = 0; d < 4; d++) result.put(encrypt(d + "key" + song), one);
+            result.put(encrypt(song + "Unlocked"), truth);
         }
         return result;
+    }
+
+    /** Song names match across builds once spaces, case and a few separators are ignored. */
+    private static String normalizeSong(String name) {
+        StringBuilder b = new StringBuilder(name.length());
+        for (int i = 0; i < name.length(); i++) {
+            char ch = Character.toLowerCase(name.charAt(i));
+            if (ch == ' ' || ch == '_' || ch == '-' || ch == '\'' || ch == '\u2019') continue;
+            b.append(ch);
+        }
+        return b.toString();
     }
 
     public static String replaceOrAppend(String raw, Map<String,String> changes) throws IOException {
