@@ -26,12 +26,12 @@
     "native/controls-plan.h": "068cafe12791cab4aa9af47b1472b13f4994d47596487c2b0d8ed885a7fb3fb9",
     "native/expected-hooks.h": "1d301b5d8f7992ae29b25a97b3c8ef31333b0312c7165efa5839cd6a05f91343",
     "native/native-hook-impl.h": "f377cb839dabdcffc8c7be25a1d4d097eb541d30176f32bb738e81786888efbe",
-    "native/offline.c": "2fce91f492b16fcaa18dabe1f73b9f76c915075ba66b55d9fb9503dc0848729a",
+    "native/offline.c": "b393acdcc6431586cf66b60cf7460de975462e6b4958be39eea74afd62fbc842",
     "native/privacy-hooks.h": "6c5c2c4efbce5009fb9a6e1764506c47ef16c585f409ff4c20d1a5a7ef51dda5",
-    "native/privacy.c": "d9b8d393a1e83db1660dc6a916134eecb8a9aadaec8a8c9b142c8d648303fd82",
+    "native/privacy.c": "ab8c8e61d985ae4a538e62fccc3a69c1fb6ffd5ec1a25ea734fe543a4ccae37c",
     "native/skin-hooks.h": "0abbc04182e6e832f4ad7cf18fc967ab4f1ec2dc8ca757d2304a20b2e6b47c7c",
     "native/skin-scale.h": "f91eb7bf2103514a1359b18a8299a7fb92d28dd7eee9bf682dcace4dbd72f742",
-    "native/skins.c": "d02e9853beb06ba5c31934a3e99d450510efa699b221576c764d6eb5628793c4"
+    "native/skins.c": "15ee103f2c6293dc664d59f32eeed2ae5a287dbf625959004ac2e08dee9a45b0"
   },
   "controls_ui_sha256": "dfefdcd5f05ed1f13ad8e7d06130893d80f66a37d1d762702c4444b0ab6135b3",
   "text_line_endings": "LF; source text matches compiled inputs, line endings normalized",

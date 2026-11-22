@@ -157,5 +157,12 @@ JNIEXPORT jboolean JNICALL Java_com_phigros_offline_SkinController_configure(JNI
     (*env)->ReleaseStringUTFChars(env,directory,path);return valid?JNI_TRUE:JNI_FALSE;
 }
 JNIEXPORT jintArray JNICALL Java_com_phigros_offline_SkinController_status(JNIEnv *env,jclass cls){(void)cls;jint values[]={atomic_load(&skin_ready),atomic_load(&loaded_textures),atomic_load(&loaded_sprites),atomic_load(&skin_errors)};jintArray out=(*env)->NewIntArray(env,4);if(out)(*env)->SetIntArrayRegion(env,out,0,4,values);return out;}
-JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm,void *reserved){(void)vm;(void)reserved;pthread_t thread;if(!pthread_create(&thread,NULL,skin_worker,NULL))pthread_detach(thread);return JNI_VERSION_1_6;}
+JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm,void *reserved){(void)vm;(void)reserved;
+// Same reasoning as privacy.c: on a build whose Unity helper offsets we have not
+// recovered, installing the skin hooks would patch the wrong addresses. Keeping the
+// library loadable but inert means custom skins are unavailable instead of crashing.
+#ifdef PHIGROS_DISABLE_HOOKS
+ return JNI_VERSION_1_6;
+#endif
+pthread_t thread;if(!pthread_create(&thread,NULL,skin_worker,NULL))pthread_detach(thread);return JNI_VERSION_1_6;}
 #endif

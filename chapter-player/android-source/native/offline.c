@@ -15,6 +15,18 @@
 #include <jni.h>
 #include <android/log.h>
 #include "expected-hooks.h"
+// One offline build targets exactly one game version, chosen at compile time: the hook
+// table, the Bad-judgment helper and the metadata offsets all come from that version's
+// audited profile. PHIGROS_GAME_410 selects the 4.1.0 (161) table; the default is the
+// 4.0.1 (157) table that the rest of this file's offsets were derived from.
+#ifdef PHIGROS_GAME_410
+#include "expected-hooks-161.h"
+#define ACTIVE_HOOKS hooks161
+#define ACTIVE_BAD_CALL 0x1d89dcc
+#else
+#define ACTIVE_HOOKS hooks
+#define ACTIVE_BAD_CALL 0x1d875c4
+#endif
 #else
 #define ANDROID_LOG_INFO 4
 static int __android_log_print(int priority,const char *tag,const char *format,...){(void)priority;(void)tag;(void)format;return 0;}
@@ -133,20 +145,39 @@ static void mark_hit(int i,int judgment) {
         __android_log_print(ANDROID_LOG_INFO,"PhigrosOffline","control.note ordinal=%d judgment=%d",i,judgment);
     }
 }
+// Two separate questions, because they used to be one flag and that broke judgment
+// protection:
+//
+//   autoplay  - the wrapper injects every touch itself. Only meaningful in the
+//               standalone offline APK; the module never does this.
+//   protect   - the plan decides what each note becomes. This is what mode 3 asks
+//               for, and it must work whether or not touches are being injected.
+//
+// Both need the chart plan, so both are "active"; only the synthetic-input path in
+// automatic() additionally requires autoplay.
+static bool protect_mode(void) {
+    return chart_config.mode==3;
+}
+static bool active(const void *score) {
+    return atomic_load(&ready) && atomic_load(&enabled) && score;
+}
+static bool active_plan(void) {
+    return atomic_load(&ready) && (atomic_load(&enabled) || protect_mode());
+}
 static void miss(void *score,float code,const void *method) {
     if(score==early_bad_score&&code==early_bad_code){
         int i=ordinal(score,code);
         if(i&&selected[i]==3&&!consumed[i]){mark_hit(i,3);bad_call(score,code,early_bad_delay,method);return;}
     }
-    if(atomic_load(&ready)&&atomic_load(&enabled)&&score)mark_hit(ordinal(score,code),1);
+    if(active(score))mark_hit(ordinal(score,code),1);
     miss_original(score,code,method);
 }
 static void good(void *score,float code,float time,Vec3 position,bool is_hold,const void *method) {
-    if(atomic_load(&ready)&&atomic_load(&enabled)&&score){int i=ordinal(score,code);if(i&&plan_is_good(selected[i]))mark_hit(i,selected[i]);}
+    if(active(score)){int i=ordinal(score,code);if(i&&plan_is_good(selected[i]))mark_hit(i,selected[i]);}
     good_call(score,code,time,position,is_hold,method);
 }
 static void perfect(void *score,float code,float time,Vec3 position,bool is_hold,const void *method) {
-    if(!atomic_load(&ready) || !atomic_load(&enabled) || !score) {
+    if(!active_plan() || !score) {
         perfect_original(score,code,time,position,is_hold,method);return;
     }
     int i=ordinal(score,code);
@@ -222,7 +253,7 @@ static void *result(void *score,const void *method) {
             *integer(out,0x10),(int)(*number(out,0x18)*100.f+0.5f),*integer(out,0x1c),*integer(out,0x20),
             *integer(out,0x24),*integer(out,0x28),*integer(out,0x34));
     }
-    if(out && score==plan_score && atomic_load(&enabled) && atomic_load(&ready)) {
+    if(out && score==plan_score && active_plan()) {
         // Read the game's real result. Never replace its score or judgments.
         atomic_store(&status_actual_score,*integer(out,0x10));
         atomic_store(&status_actual_accuracy,(int)(*number(out,0x18)*100.f+0.5f));
@@ -238,7 +269,7 @@ static void *result(void *score,const void *method) {
 }
 
 static bool automatic(void *self, const void *method, judge_fn original, int type) {
-    if (!atomic_load(&ready) || !atomic_load(&enabled) || !self) return original(self,method);
+    if (!active_plan() || !self) return original(self,method);
     void *note=pointer(self,type==0?0x40:0x38);
     void *progress=pointer(self,0x28);
     if (!note || !progress) return original(self,method);
@@ -375,14 +406,14 @@ static void *worker(void *unused) {
     for (int i=0;i<1800 && !image;i++) { dl_iterate_phdr(find_image,NULL);if (!image) usleep(100000); }
     if (!image) return NULL;
     // Validate every hook before changing any code; offset data applies only to 4.0.1 (157).
-    for (size_t i=0;i<sizeof(hooks)/sizeof(hooks[0]);i++) if (memcmp((void *)(image+hooks[i].rva),hooks[i].prefix,16)) {
+    for (size_t i=0;i<sizeof(ACTIVE_HOOKS)/sizeof(ACTIVE_HOOKS[0]);i++) if (memcmp((void *)(image+ACTIVE_HOOKS[i].rva),ACTIVE_HOOKS[i].prefix,16)) {
         __android_log_print(ANDROID_LOG_ERROR,"PhigrosOffline","Client version mismatch; autoplay disabled");
         atomic_store(&enabled,false);return NULL;
     }
-    bad_call=(void (*)(void *,float,float,const void *))(image+0x1d875c4);
+    bad_call=(void (*)(void *,float,float,const void *))(image+ACTIVE_BAD_CALL);
     void *replacements[]={(void *)click,(void *)drag,(void *)flick,(void *)hold,(void *)record,(void *)perfect,(void *)result,(void *)miss,(void *)good};
     void **originals[]={(void **)&click_original,(void **)&drag_original,(void **)&flick_original,(void **)&hold_original,(void **)&record_original,(void **)&perfect_original,(void **)&result_original,(void **)&miss_original,(void **)&good_call};
-    for (size_t i=0;i<sizeof(replacements)/sizeof(replacements[0]);i++) if (install(&hooks[i],replacements[i],originals[i])) {
+    for (size_t i=0;i<sizeof(replacements)/sizeof(replacements[0]);i++) if (install(&ACTIVE_HOOKS[i],replacements[i],originals[i])) {
         atomic_store(&enabled,false);
         __android_log_print(ANDROID_LOG_ERROR,"PhigrosOffline","Autoplay hook installation failed: %zu",i);
         return NULL;

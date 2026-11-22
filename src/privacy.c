@@ -53,5 +53,13 @@ static void *privacy_worker(void *unused){
     }
     __android_log_print(ANDROID_LOG_INFO,"PhigrosOffline","offline.login.hidden; no INTERNET permission; http hooks removed");return NULL;
 }
-JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm,void *reserved){(void)vm;(void)reserved;pthread_t thread;if(!pthread_create(&thread,NULL,privacy_worker,NULL))pthread_detach(thread);return JNI_VERSION_1_6;}
+JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm,void *reserved){(void)vm;(void)reserved;
+// On a game build whose hook offsets we have not recovered, the privacy hooks would be
+// installed at wrong addresses. Compiling with PHIGROS_DISABLE_HOOKS keeps the library
+// loadable (so System.loadLibrary succeeds) while skipping installation entirely, so
+// the account-hiding feature is simply absent instead of crashing the game.
+#ifdef PHIGROS_DISABLE_HOOKS
+ return JNI_VERSION_1_6;
+#endif
+pthread_t thread;if(!pthread_create(&thread,NULL,privacy_worker,NULL))pthread_detach(thread);return JNI_VERSION_1_6;}
 #endif

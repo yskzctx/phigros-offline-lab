@@ -155,6 +155,37 @@ int main(void) {
     out = result(score_obj, NULL);
     assert(*integer(out, 0x10) == 777);    /* still forced */
 
+    /* ---- 6. protection works with autoplay OFF -----------------------------
+     * The module never enables autoplay - it starts the session with
+     * changeAutoplay(false) because it must not inject touches into the real game.
+     * Every hook used to gate on `enabled`, so on the module the plan was built and
+     * then ignored: judgment protection did nothing. These two assertions pin the
+     * separation: the plan-driven path runs with autoplay off, while synthetic touch
+     * injection stays off. */
+    setup(guard);
+    play();
+    atomic_store(&enabled, false);         /* module: autoplay never turns on */
+    assert(active_plan());                 /* plan-driven judgment still runs */
+    assert(!active(score_obj));            /* but no touch is injected */
+    assert(protect_mode());                /* because mode 3 asks for protection */
+
+    /* A perfect input under a protect-AP plan must be rewritten to Perfect even
+     * though autoplay is off, proving the hook body is reachable. protect-AP means
+     * every note becomes Perfect, so the Perfect tally must rise and nothing else
+     * may. */
+    ControlConfig ap_off = {.mode = 3, .assist_guard = 3, .target = 1000000,
+                            .accuracy = 10000};
+    setup(ap_off);
+    play();
+    atomic_store(&enabled, false);
+    int before_perfect = *integer(score_obj, 0x58);
+    int before_other = *integer(score_obj, 0x5c) + *integer(score_obj, 0x60) +
+                       *integer(score_obj, 0x64);
+    perfect(score_obj, 1.f, 0.f, (Vec3){0.f, 0.f, 0.f}, false, NULL);
+    assert(*integer(score_obj, 0x58) == before_perfect + 1);
+    assert(*integer(score_obj, 0x5c) + *integer(score_obj, 0x60) +
+           *integer(score_obj, 0x64) == before_other);
+
     puts("PASS guard mode 3 planning, record persistence, forced-result override "
          "and independence from autoplay");
     return 0;
