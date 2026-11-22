@@ -71,6 +71,14 @@ public class GuardAndForcedResultTest {
         reject("early over range", () -> ForcedResult.parse(true, "1", "", "", "", "", "", "", true, "1000000", ""));
         reject("negative late", () -> ForcedResult.parse(true, "1", "", "", "", "", "", "", true, "", "-1"));
 
+        // ---- settlement symbol: 0 none, 1 Phi, 2 FC --------------------------
+        ForcedResult.Values symAuto = ForcedResult.parse(true, "100", "99", "10", "5", "1", "1", "15", false, "", "", 0);
+        check(symAuto.symbol == 0, "symbol defaults to no override");
+        ForcedResult.Values symPhi = ForcedResult.parse(true, "100", "100", "10", "0", "0", "0", "15", false, "", "", 1);
+        check(symPhi.symbol == 1, "symbol Phi selected");
+        reject("symbol out of range", () -> ForcedResult.parse(true, "1", "", "", "", "", "", "", false, "", "", 3));
+        reject("negative symbol", () -> ForcedResult.parse(true, "1", "", "", "", "", "", "", false, "", "", -1));
+
         // A score far beyond the real maximum is still accepted.
         ForcedResult.Values huge = ForcedResult.parse(true, "99999999", "100", "", "", "", "", "");
         check(huge.score == 99999999, "score above real maximum accepted");

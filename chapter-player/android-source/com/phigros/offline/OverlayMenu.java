@@ -94,6 +94,7 @@ public final class OverlayMenu {
             force.put("earlyLateOn",f.earlyLateOn);
             force.put("early",f.early==0?"":Integer.toString(f.early));
             force.put("late",f.late==0?"":Integer.toString(f.late));
+            force.put("symbol",f.symbol);
             state.put("force",force);
             state.put("forceState",f.enabled?"已启用 · 下次结算按上面的数值显示":"未启用");
         }catch(IllegalArgumentException ignored){state.put("forceState","结算显示配置无效，请重新填写");}
@@ -110,7 +111,7 @@ public final class OverlayMenu {
         if(action.equals("save")){int guard=p.optInt("assistGuard",0),score=p.optInt("guardScore",0);ControlsConfig c=ControlsConfig.parse(p.getInt("mode"),p.getString("score"),p.getString("accuracy"),p.getString("rules"));if(c.mode==3&&(guard<1||guard>3||(guard==3&&(score<1||score>1000000))))throw new IllegalArgumentException(guard==3?"保护分数必须填写":"判定保护类型无效");if(c.mode!=3)guard=0;NativeControls.save(activity,c,p.optBoolean("blockTouch",true),guard,score);publish(false,"已保存，下局使用新判定计划",true);return;}
         if(action.equals("reset")){NativeControls.save(activity,ControlsConfig.parse(0,"1000000","100",""),true,0,0);publish(true,"游玩设置已重置；历史成绩未改变",true);return;}
         if(action.equals("force-result")){
-            ForcedResult.Values v=ForcedResult.parse(p.optBoolean("enabled",false),p.optString("score",""),p.optString("accuracy",""),p.optString("perfect",""),p.optString("good",""),p.optString("bad",""),p.optString("miss",""),p.optString("combo",""),p.optBoolean("earlyLateOn",false),p.optString("early",""),p.optString("late",""));
+            ForcedResult.Values v=ForcedResult.parse(p.optBoolean("enabled",false),p.optString("score",""),p.optString("accuracy",""),p.optString("perfect",""),p.optString("good",""),p.optString("bad",""),p.optString("miss",""),p.optString("combo",""),p.optBoolean("earlyLateOn",false),p.optString("early",""),p.optString("late",""),p.optInt("symbol",0));
             ForcedResult.save(activity,v);
             publish(false,v.enabled?"结算显示已保存，本局结算即生效":"结算显示已关闭",true);return;
         }

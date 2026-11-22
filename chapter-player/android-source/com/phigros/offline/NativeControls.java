@@ -4,7 +4,7 @@ import android.content.SharedPreferences;
 public final class NativeControls {
     private NativeControls(){}
     private static native boolean configure(int mode,int target,int accuracy,boolean blockTouch,int assistGuard,int guardScore,int[] rules);
-    static native boolean configureForcedResult(boolean enabled,int score,int accuracy,int perfect,int good,int bad,int miss,int combo,boolean earlyLateOn,int early,int late);
+    static native boolean configureForcedResult(boolean enabled,int score,int accuracy,int perfect,int good,int bad,int miss,int combo,boolean earlyLateOn,int early,int late,int symbol);
     private static native int[] status();
     public static SharedPreferences preferences(Context c) {return c.getSharedPreferences("offline_controls",Context.MODE_PRIVATE);}
     public static ControlsConfig load(Context c) {

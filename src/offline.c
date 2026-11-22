@@ -174,6 +174,10 @@ static atomic_int force_score,force_accuracy,force_perfect,force_good,force_bad,
 // Good 的早/晚计数。结算页会分别显示，所以强制显示也应能单独设置，而不是固定为 0。
 static atomic_int force_early,force_late;
 static atomic_bool force_early_late_on;
+// 结算符号（Φ / FC）。符号不是独立字段，而是游戏用判定数量派生出来的：全 Perfect
+// 判为 Φ，没有 Bad/Miss 判为 FC。所以强制符号只有一条可靠办法——把判定数量改成
+// 能推出该符号的组合。0=不干预(按填写的判定数), 1=Φ, 2=FC。
+static atomic_int force_symbol;
 
 static bool force_result_apply(void *out) {
     if (!out || !atomic_load(&force_enabled)) return false;
@@ -187,6 +191,17 @@ static bool force_result_apply(void *out) {
     *integer(out,0x20)=atomic_load(&force_good);
     *integer(out,0x24)=atomic_load(&force_bad);
     *integer(out,0x28)=atomic_load(&force_miss);
+    // 结算符号由判定数量派生，因此按用户选择的符号改判定数，是最可靠的写法：
+    //   Φ  = 全部 Perfect（Good/Bad/Miss 归零）
+    //   FC = 无 Bad、无 Miss
+    // 0 表示不干预，完全按上面填写的数量显示。
+    int symbol=atomic_load(&force_symbol);
+    if(symbol==1){
+        int total=*integer(out,0x1c)+*integer(out,0x20)+*integer(out,0x24)+*integer(out,0x28);
+        *integer(out,0x1c)=total;*integer(out,0x20)=0;*integer(out,0x24)=0;*integer(out,0x28)=0;
+    } else if(symbol==2){
+        *integer(out,0x24)=0;*integer(out,0x28)=0;
+    }
     *integer(out,0x34)=atomic_load(&force_combo);
     // Early/Late are shown separately on the settlement screen, so they must be
     // settable too. Written only when the user opted in; otherwise zeroed as before, so
@@ -419,7 +434,7 @@ JNIEXPORT jintArray JNICALL Java_com_phigros_offline_NativeControls_status(JNIEn
     jintArray out=(*env)->NewIntArray(env,21);
     if(out)(*env)->SetIntArrayRegion(env,out,0,21,values);return out;
 }
-JNIEXPORT jboolean JNICALL Java_com_phigros_offline_NativeControls_configureForcedResult(JNIEnv *env,jclass cls,jboolean enabled,jint score,jint accuracy,jint perfect,jint good,jint bad,jint miss,jint combo,jboolean earlyLateOn,jint early,jint late) {
+JNIEXPORT jboolean JNICALL Java_com_phigros_offline_NativeControls_configureForcedResult(JNIEnv *env,jclass cls,jboolean enabled,jint score,jint accuracy,jint perfect,jint good,jint bad,jint miss,jint combo,jboolean earlyLateOn,jint early,jint late,jint symbol) {
     (void)env;(void)cls;
     // Ranges are deliberately permissive: the whole point of this switch is to
     // display values a real run could not produce. Only values that would corrupt
@@ -428,6 +443,7 @@ JNIEXPORT jboolean JNICALL Java_com_phigros_offline_NativeControls_configureForc
     if(perfect<0||good<0||bad<0||miss<0||combo<0)return JNI_FALSE;
     if(perfect>999999||good>999999||bad>999999||miss>999999||combo>999999)return JNI_FALSE;
     if(early<0||late<0||early>999999||late>999999)return JNI_FALSE;
+    if(symbol<0||symbol>2)return JNI_FALSE;
     atomic_store(&force_score,score);
     atomic_store(&force_accuracy,accuracy);
     atomic_store(&force_perfect,perfect);
@@ -438,6 +454,7 @@ JNIEXPORT jboolean JNICALL Java_com_phigros_offline_NativeControls_configureForc
     atomic_store(&force_early,early);
     atomic_store(&force_late,late);
     atomic_store(&force_early_late_on,earlyLateOn==JNI_TRUE);
+    atomic_store(&force_symbol,symbol);
     atomic_store(&force_enabled,enabled==JNI_TRUE);
     return JNI_TRUE;
 }

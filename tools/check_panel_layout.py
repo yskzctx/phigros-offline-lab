@@ -19,7 +19,7 @@ SOURCE = Path(r'I:\dsh\work\phigros-offline-lab\ui\controls-ui.html')
 EXPECTED_INPUTS = [
     'force-enabled', 'force-score', 'force-accuracy',
     'force-perfect', 'force-good', 'force-bad', 'force-miss', 'force-combo',
-    'force-early-late-on', 'force-early', 'force-late',
+    'force-symbol', 'force-early-late-on', 'force-early', 'force-late',
 ]
 EXPECTED_BUTTONS = ['force-save', 'force-clear']
 
