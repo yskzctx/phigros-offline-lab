@@ -47,12 +47,14 @@ HEADER_TEMPLATE = """\
  * function; the mask marks bytes that encode an address and are therefore compared
  * loosely.
  */
+#ifndef PHIGROS_HOOKSPEC_DEFINED
+#define PHIGROS_HOOKSPEC_DEFINED
 struct HookSpec {{ const char *name; unsigned long rva; unsigned char prefix[16]; unsigned relocate_mask; }};
+#endif
 static const struct HookSpec hooks[{count}] = {{
 {entries}
 }};
 """
-
 # skin-hooks.h also carries the auxiliary Unity helper RVAs that skins.c calls
 # directly. They are not hooks, so a profile does not describe them; the generator
 # preserves whatever the existing header declares so a regeneration cannot silently
