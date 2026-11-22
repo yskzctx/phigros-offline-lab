@@ -138,7 +138,29 @@
       "relocateMask": 0
     }
   },
-  "aux": {},
+  "aux": {
+    "SPRITE_TEXTURE_RVA": {
+      "rva": 63578304
+    },
+    "SPRITE_PPU_RVA": {
+      "rva": 64044880
+    },
+    "TEXTURE_WIDTH_RVA": {
+      "rva": 63952776
+    },
+    "TEXTURE_HEIGHT_RVA": {
+      "rva": 63049820
+    },
+    "SPRITE_CREATE_RVA": {
+      "rva": 63377368
+    },
+    "RENDERER_GET_RVA": {
+      "rva": 63563776
+    },
+    "RENDERER_SET_RVA": {
+      "rva": 63057680
+    }
+  },
   "recoveryMethod": "instruction skeleton (48 instructions, address immediates masked) + 157 relative-distance fingerprint + static data-reference sequence",
   "referenceVersionCode": 157,
   "audit": {
@@ -156,5 +178,14 @@
     "whySkeletonAloneFailed": "the judgment prologues are 4-5 instruction stubs that look identical across all four control classes, so a skeleton match alone cannot separate them - the relative distance is what disambiguates",
     "rejectedApproach": "the il2cpp metadata method-record table resolves NoteMove to 0x1d7efc4 on 4.1.0, 22236 bytes away from the address confirmed by three independent signals (0x1d846a0); that table is not the method table these hooks need",
     "notYetVerifiedOnDevice": true
-  }
+  },
+  "auxUnresolved": [
+    "SPRITE_RECT_RVA",
+    "SPRITE_PIVOT_RVA",
+    "OBJECT_ALIVE_RVA",
+    "TEXTURE_CTOR_RVA",
+    "LOAD_IMAGE_RVA"
+  ],
+  "badCall": 30973388,
+  "auxNote": "Skin rendering needs all twelve Unity helper RVAs. Seven are recovered and audited (skeleton match plus data-reference agreement); five remain unresolved because they are 3-5 instruction getters that identical-code folding collapses, leaving dozens of equal-scoring candidates. A 4.1.0 build therefore has judgment protection, forced settlement display and score handling, but skin rendering stays off until those five are pinned down by device testing."
 }
