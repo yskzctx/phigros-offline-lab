@@ -14,7 +14,7 @@
     "com/phigros/offline/RksPlanner.java": "ef669a243ea91892a39b630232384a7cd2e701684589db36c65222492bfc6a6b",
     "com/phigros/offline/CatalogXmlMerge.java": "8e414a1ce01a5c72bf08c65dcdef6d6cbb6135c38714996c830a7a292d8a2a4d",
     "com/phigros/offline/LaunchActivity.java": "8575c8e06b3fdc3d77df2567a4af3336a58e10a4fa495b1d1f827e71a58792f1",
-    "com/phigros/offline/OverlayMenu.java": "b8841a1028ae3bc6d8a175bf19d36cb40e4d6fb4b86e27410440e7091f8b8c4d",
+    "com/phigros/offline/OverlayMenu.java": "0af242b43629a4641238c9dc8380becacc379a27843d76c279664f193eb56040",
     "com/phigros/offline/RksEditor.java": "13159c9b3171975fae468caf921eda653430c2ff76588872c38c2a894221ade2",
     "com/phigros/offline/OfflineApplication.java": "f49e008c1fec60fb56f1334f91cd90183708a9fcad3d2e6fdfa40f51ad4bd5d2",
     "com/phigros/offline/OfflineAssets.java": "6d1d6b28e8c26ea05fd69d98b246f46309dc2efe6ac2884084112e52041bb3ae",
@@ -33,7 +33,7 @@
     "native/skin-scale.h": "f91eb7bf2103514a1359b18a8299a7fb92d28dd7eee9bf682dcace4dbd72f742",
     "native/skins.c": "15ee103f2c6293dc664d59f32eeed2ae5a287dbf625959004ac2e08dee9a45b0"
   },
-  "controls_ui_sha256": "dfefdcd5f05ed1f13ad8e7d06130893d80f66a37d1d762702c4444b0ab6135b3",
+  "controls_ui_sha256": "00855e8dacb9a547140a9f0c0e84ec56290be1d5f563ea5d2169324f438d6720",
   "text_line_endings": "LF; source text matches compiled inputs, line endings normalized",
   "native_build": "local Windows cross compile, nightly-2026-01-01, NDK26.3.11579264",
   "chapter_backend_sha256": "d03dba5088b4f83dcd9fe45a708938f3879e5af40a76cced02e8674de46e79a8",

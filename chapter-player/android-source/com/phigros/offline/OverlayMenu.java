@@ -84,6 +84,20 @@ public final class OverlayMenu {
         if(s.length>=19&&s[11]==1)runtime+="；实际 P "+s[14]+" / G "+s[15]+" / B "+s[16]+" / M "+s[17]+"；最长连击 "+s[18]+" / "+s[2];
         if(s.length>=21&&s[11]==1)runtime+="；Early "+s[19]+" / Late "+s[20];
         state.put("runtime",runtime);state.put("rksTarget",prefs.getString("rks_target",""));String history=prefs.getString("rks_status","");
+        // Save-transfer state: what is on disk now, and which backups can be restored.
+        try{
+            JSONObject save=new JSONObject();
+            save.put("summary",SaveTransfer.summary(activity));
+            JSONArray list=new JSONArray();
+            for(java.io.File backup:SaveTransfer.backups(activity)){
+                JSONObject item=new JSONObject();
+                item.put("path",backup.getAbsolutePath());
+                item.put("label",SaveTransfer.label(backup));
+                list.put(item);
+            }
+            save.put("backups",list);
+            state.put("save",save);
+        }catch(RuntimeException ignored){}
         try{
             ForcedResult.Values f=ForcedResult.load(activity);
             JSONObject force=new JSONObject();force.put("enabled",f.enabled);force.put("score",f.score==0?"":Integer.toString(f.score));
@@ -108,6 +122,8 @@ public final class OverlayMenu {
         JSONObject p=new JSONObject(payload);
         if(action.equals("ready")){publish(true,null,false);return;}
         if(action.equals("skin-open")){hide();android.content.Intent intent=new android.content.Intent(activity,SkinActivity.class);activity.startActivity(intent);return;}
+        if(action.equals("save-import")){hide();android.content.Intent intent=new android.content.Intent(activity,SaveTransferActivity.class);intent.setAction(SaveTransferActivity.ACTION_IMPORT);activity.startActivity(intent);return;}
+        if(action.equals("save-export")){hide();android.content.Intent intent=new android.content.Intent(activity,SaveTransferActivity.class);intent.setAction(SaveTransferActivity.ACTION_EXPORT);activity.startActivity(intent);return;}
         if(action.equals("save")){int guard=p.optInt("assistGuard",0),score=p.optInt("guardScore",0);ControlsConfig c=ControlsConfig.parse(p.getInt("mode"),p.getString("score"),p.getString("accuracy"),p.getString("rules"));if(c.mode==3&&(guard<1||guard>3||(guard==3&&(score<1||score>1000000))))throw new IllegalArgumentException(guard==3?"保护分数必须填写":"判定保护类型无效");if(c.mode!=3)guard=0;NativeControls.save(activity,c,p.optBoolean("blockTouch",true),guard,score);publish(false,"已保存，下局使用新判定计划",true);return;}
         if(action.equals("reset")){NativeControls.save(activity,ControlsConfig.parse(0,"1000000","100",""),true,0,0);publish(true,"游玩设置已重置；历史成绩未改变",true);return;}
         if(action.equals("force-result")){
@@ -121,6 +137,18 @@ public final class OverlayMenu {
         else if(action.equals("all-ap")){edit.putString("rks_target","").putBoolean("all_ap_pending",true).putBoolean("unlock_all_pending",false).putBoolean("rks_pending",false).putBoolean("rks_restore",false);}
         else if(action.equals("unlock-all")){edit.putString("rks_target","").putBoolean("unlock_all_pending",true).putBoolean("all_ap_pending",false).putBoolean("rks_pending",false).putBoolean("rks_restore",false);}
         else if(action.equals("restore")){if(prefs.getString("rks_backup","").isEmpty())throw new IllegalArgumentException("尚无历史备份");edit.putString("rks_target","").putBoolean("rks_restore",true).putBoolean("rks_pending",false).putBoolean("all_ap_pending",false).putBoolean("unlock_all_pending",false);}
+        else if(action.equals("save-restore")){
+            // Restoring is immediate: it only touches our own backup directory, and the
+            // current save is copied aside first, so a wrong pick is recoverable.
+            String path=p.getString("path");
+            java.io.File dir=SaveTransfer.backupDir(activity);
+            java.io.File target=new java.io.File(path);
+            if(!target.getCanonicalPath().startsWith(dir.getCanonicalPath()+java.io.File.separator))
+                throw new IllegalArgumentException("备份路径无效");
+            try{SaveTransfer.restore(activity,target);}
+            catch(java.io.IOException e){throw new IllegalStateException(e.getMessage());}
+            publish(true,"已恢复备份，请完全退出并重启游戏",true);return;
+        }
         else throw new IllegalArgumentException("未知控制操作");
         if(!edit.commit())throw new IllegalStateException("操作保存失败");publish(false,"已排队，完全退出并冷启动游戏后生效",false);
     }catch(Exception e){publish(false,String.valueOf(e.getMessage()),false);}}

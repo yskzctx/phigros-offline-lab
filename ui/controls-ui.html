@@ -62,6 +62,7 @@
  </div>
  <div class="card"><h2>目标历史 RKS</h2><div class="row"><input id="rks" class="grow" style="width:160px" type="text" inputmode="decimal" placeholder="例如 16.25" maxlength="8"><button id="rks-apply" class="primary">应用 RKS</button></div><p class="muted">支持四位小数。重启后调整历史记录；模拟历史不是实际成绩。上限 17.32 表示恢复全部 AP。</p><div id="history-state" class="pending hidden"></div></div>
  <div class="card"><h2>恢复历史成绩与全解锁</h2><div class="history-actions"><button id="all-ap" class="primary">全解锁 ＋ 全部 AP</button><button id="unlock-all">仅全解锁（保留成绩）</button><button id="restore">恢复上次备份</button></div><p class="muted">都在下次冷启动执行。“全解锁＋全部 AP”同步解锁全部曲目、收藏品、曲绘与头像并设置全 AP；“仅全解锁”保留当前成绩；“恢复备份”回退上次修改前的成绩与解锁状态。</p></div>
+ <div class="card"><h2>导入 / 导出存档</h2><p id="save-state" style="margin:0">读取中…</p><div class="history-actions"><button id="save-import" class="primary">导入存档文件</button><button id="save-export">导出当前存档</button></div><p class="muted">可导入游戏原始的 playerprefs.xml，或本面板导出的 ZIP。导入会先备份当前存档，可随时恢复。导入后完全退出并重启游戏才会生效。</p><div id="save-pending" class="pending hidden"></div><div id="save-backups"></div></div>
  <div class="card"><h2>我的自制章节</h2><p class="muted">导入带音乐和插画的本地 .pez / ZIP 谱包。记录独立保存，自动游玩不保留成绩。</p><button id="chapter-open" class="primary">打开自制章节</button></div>
  <div class="card"><h2>音符皮肤</h2><p id="skin-state" style="margin:0">默认皮肤</p><button id="skin-open" class="primary" style="margin-top:10px">导入 / 选择皮肤</button><p class="muted">支持标准 Phira 音符图包及长条图集。选好或恢复默认后重启应用；判定特效和音效沿用游戏设置。</p></div>
  <div class="card"><h2>初始 Data</h2><p style="margin:0">首次使用此版准备至少 <strong>10000 MB</strong> 本地 Data。</p><p class="muted">只补一次，不减少更高余额。游戏可能自动换算为 GB；不修改正版或在线账户。</p></div>
@@ -100,6 +101,14 @@ function encoded(){return rules.map(r=>[r.judgment,r.position,r.start||'1',r.end
 $('save').onclick=()=>{const sc=$('score').value.trim(),ac=$('accuracy').value.trim(),gs=$('guard-score').value.trim();if(mode===1&&(!/^[0-9]{1,7}$/.test(sc)||+sc>1000000))return toast('目标分数应为 0～1000000');if(mode===2&&!/^(100(?:\.0{1,2})?|[0-9]{1,2}(?:\.[0-9]{1,2})?)$/.test(ac))return toast('目标准确率应为 0～100%');if(mode===3&&guardKind===3&&(!/^[1-9][0-9]{0,6}$/.test(gs)||+gs>1000000))return toast('保护分数必须填写 1～1000000');send('save',{mode,score:mode===1?sc:0,accuracy:mode===2?ac:0,guardScore:mode===3&&guardKind===3?gs:0,blockTouch:mode===3?false:$('block-touch').checked,assistGuard:mode===3?guardKind:0,rules:encoded()})};
 $('skin-open').onclick=()=>send('skin-open');
 $('chapter-open').onclick=()=>send('chapter-open');
+$('save-import').onclick=()=>send('save-import');
+$('save-export').onclick=()=>send('save-export');
+function renderBackups(list){const box=$('save-backups');box.innerHTML='';if(!list||!list.length)return;
+ const title=document.createElement('p');title.className='muted';title.textContent='可恢复的备份：';box.appendChild(title);
+ list.slice(0,5).forEach(b=>{const row=document.createElement('div');row.className='history-actions';
+  const btn=document.createElement('button');btn.textContent='恢复 '+b.label;
+  btn.onclick=()=>{if(confirm('恢复 '+b.label+' ？当前存档会先被备份。'))send('save-restore',{path:b.path});};
+  row.appendChild(btn);box.appendChild(row);});}
 $('reset').onclick=()=>{setMode(0);rules=[];$('score').value='1000000';$('accuracy').value='100';$('guard-score').value='';renderRules();send('reset')};
 $('auto').onchange=()=>{send('auto',{enabled:$('auto').checked});if(hasBridge)$('auto').disabled=true};
 $('rks-apply').onclick=()=>send('rks',{target:$('rks').value});$('all-ap').onclick=()=>send('all-ap');$('unlock-all').onclick=()=>send('unlock-all');$('restore').onclick=()=>send('restore');
@@ -112,6 +121,8 @@ window.receive=function(s){$('auto').checked=!!s.auto;$('auto').disabled=false;$
  let text=s.runtime||'在选曲页保存，下局使用新设置。';$('runtime').replaceChildren();let strong=document.createElement('strong');strong.textContent=s.auto?(s.mode===3?'判定保护已开启':'自动游玩已开启'):'当前为手动模式';$('runtime').append(strong,document.createTextNode(text));let history=s.history||'';$('history-state').textContent=history;$('history-state').classList.toggle('hidden',!history);
  if(s.force){$('force-enabled').checked=!!s.force.enabled;$('force-label').textContent=s.force.enabled?'开启':'关闭';$('force-score').value=s.force.score||'';$('force-accuracy').value=s.force.accuracy||'';$('force-perfect').value=s.force.perfect||'';$('force-good').value=s.force.good||'';$('force-bad').value=s.force.bad||'';$('force-miss').value=s.force.miss||'';$('force-combo').value=s.force.combo||'';$('force-early-late-on').checked=!!s.force.earlyLateOn;$('force-early-late-label').textContent=s.force.earlyLateOn?'指定':'跟随判定';$('force-early').value=s.force.early||'';$('force-late').value=s.force.late||'';$('force-symbol').value=String(s.force.symbol||0)}
  if(s.forceState){$('force-state').textContent=s.forceState;$('force-state').classList.toggle('hidden',!s.forceState)}
+ if(s.save){$('save-state').textContent=s.save.summary||'';renderBackups(s.save.backups)}
+ if(s.savePending){$('save-pending').textContent=s.savePending;$('save-pending').classList.toggle('hidden',!s.savePending)}
  if(s.message)toast(s.message);if(s.saved){dirty=false;showDirty()}};
 if(hasBridge)send('ready');else window.receive({auto:false,mode:0,score:'900000',accuracy:'90',rules:[],runtime:'界面预览 · 手机上显示实际执行数量和预测成绩',history:'此页为浅色界面预览，不修改任何游戏数据。'});
 </script></body></html>

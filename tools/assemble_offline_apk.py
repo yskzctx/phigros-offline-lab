@@ -263,7 +263,8 @@ def patch_manifest_version(manifest: bytes, version_code: int | None, version_na
 
 
 def repack(base: Path, dex: Path, natives: dict[str, Path], work: Path,
-           version_code: int | None = None, version_name: str | None = None) -> Path:
+           version_code: int | None = None, version_name: str | None = None,
+           manifest_override: Path | None = None) -> Path:
     """Rebuild the APK by copying the base's raw compressed bytes verbatim.
 
     Copying entries through ZipFile.open() would recompress them and let Python add
@@ -285,7 +286,13 @@ def repack(base: Path, dex: Path, natives: dict[str, Path], work: Path,
     replaced.update(target_name for _source, target_name in ASSET_SOURCES)
 
     patched_manifest = None
-    if version_code is not None or version_name is not None:
+    if manifest_override is not None:
+        # A pre-rebuilt manifest, e.g. one produced by register_activities.py after
+        # adding the offline activities. It still gets its version stamped so the
+        # package identity matches the build.
+        patched_manifest = patch_manifest_version(
+            Path(manifest_override).read_bytes(), version_code, version_name)
+    elif version_code is not None or version_name is not None:
         with zipfile.ZipFile(base) as archive:
             patched_manifest = patch_manifest_version(
                 archive.read('AndroidManifest.xml'), version_code, version_name)
@@ -480,6 +487,7 @@ def main() -> int:
     parser.add_argument('--version-name')
     parser.add_argument('--allow-unknown-base', action='store_true')
     parser.add_argument('--check-only', action='store_true', help='validate the base and sources, build nothing')
+    parser.add_argument('--manifest', type=Path, help='prebuilt binary AndroidManifest.xml to use instead of the base manifest (needed to declare the offline activities)')
     args = parser.parse_args()
 
     base = args.base.resolve()
@@ -524,7 +532,7 @@ def main() -> int:
         for leaf, path in natives.items():
             print(f'   {leaf} {path.stat().st_size} bytes')
         print('== repacking ==')
-        unsigned = repack(base, dex, natives, work, args.version_code, args.version_name)
+        unsigned = repack(base, dex, natives, work, args.version_code, args.version_name, args.manifest)
         print('== aligning and signing ==')
         signed = align_and_sign(args.sdk, args.build_tools, unsigned, work,
                                 args.keystore.resolve(), args.alias, args.password_file.resolve())
