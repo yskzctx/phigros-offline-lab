@@ -12,6 +12,16 @@ public final class NativeControls {
      * behave as "protect a zero score floor" (an all-Perfect run) and made "protect score"
      * behave as protect-AP. Kept in one place so both products cannot drift again.
      */
+    /**
+     * The protection kind as the native layer expects it for this mode.
+     *
+     * Mode 4 (promotion) reads the kind itself and uses the panel's numbering, so it must not
+     * be translated. The planner modes use the planner's numbering, so they are.
+     */
+    public static int guardForMode(int mode, int panelKind) {
+        return mode == 4 ? panelKind : plannerGuard(panelKind);
+    }
+
     public static int plannerGuard(int panelKind) {
         switch (panelKind) {
             case 1: return 3;   // protect AP
@@ -50,7 +60,7 @@ public final class NativeControls {
     public static void apply(ControlsConfig c) {apply(c,true,c.guardKind,c.guardScore);}
     public static void apply(ControlsConfig c,boolean block,int guard,int score) {
         if(guard<0||guard>3||score<0||score>1000000)throw new IllegalArgumentException("成绩保护参数无效");
-        if(LaunchActivity.isNativeLoaded() && !configure(c.mode,c.target,c.accuracy,block,plannerGuard(guard),score,c.packed))
+        if(LaunchActivity.isNativeLoaded() && !configure(c.mode,c.target,c.accuracy,block,guardForMode(c.mode,guard),score,c.packed))
             throw new IllegalArgumentException("原生控制拒绝此配置");
     }
     public static void save(Context context,ControlsConfig c){

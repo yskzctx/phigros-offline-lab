@@ -177,6 +177,7 @@ static atomic_int promote_count;
 //   2 = protect FC   : Bad and Miss become Perfect (Good stays Good)
 //   3 = protect score: promote only while the score is below the floor
 static bool promote_covers(void *score,int judgment) {
+    // Panel numbering: 1 = protect AP, 2 = protect FC, 3 = protect a score floor.
     int kind=chart_config.assist_guard;
     if(kind<1||kind>3)return false;
     if(judgment==0)return false;                 // already Perfect
@@ -194,8 +195,8 @@ static bool promote_covers(void *score,int judgment) {
         long long points=(long long)perfect*1000000LL+(long long)good*650000LL;
         return points < (long long)floor*total;
     }
-    if(kind==1)return true;                      // AP: anything not Perfect
-    return judgment>=2;                          // FC: Bad(2) or Miss(3) only
+    if(kind==1)return true;                      // protect AP: anything not Perfect
+    return judgment>=2;                          // protect FC: Bad(2) or Miss(3) only
 }
 
 // Rewrite one judgment: undo the count the game just incremented, add a Perfect instead.

@@ -45,7 +45,7 @@ int main(void) {
     chart_config.assist_guard = 1;
     assert(promoting());
 
-    /* ---- 2. protect AP: everything non-Perfect is covered ---------------- */
+    /* ---- 2. protect AP (kind 1): everything non-Perfect is covered --------- */
     reset_score();
     chart_config.mode = 4;
     chart_config.assist_guard = 1;

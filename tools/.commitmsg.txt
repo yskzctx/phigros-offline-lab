@@ -1,0 +1,27 @@
+fix: protection mode shows its options, kind numbering, panel scripts verified
+
+Four issues from device testing.
+
+1. Choosing 判定保护 showed no AP/FC/score selector, and saving then failed with the native
+   "configuration rejected" error. setMode() revealed the selector only when mode === 3, but
+   判定保护 is mode 4 - so the user was asked to pick something the panel never offered, and the
+   native layer rejected the save because no kind was selected. The condition now matches the
+   protection mode.
+
+2. 自动补全 removed. It was autoplay-with-a-rescue, not protection, and having two protection
+   options made the panel ambiguous. 判定保护 (mode 4) is now the only one.
+
+3. The protection kind was translated for the wrong modes. plannerGuard() converts the panel's
+   numbering (1=AP, 2=FC, 3=score) to the planner's (1=score, 2=FC, 3=AP), which is right for
+   planner modes but wrong for mode 4 - it reads the kind itself, so translating inverted AP and
+   score. guardForMode() now translates only for planner modes, and promote_covers() documents
+   and uses the panel numbering.
+
+4. The module's skin-hooks.h still carried the stale NoteMove prefixes (only the offline copy was
+   corrected earlier), so skin_worker() aborted on the first mismatch and custom skins never
+   installed. Fixed, and the four prefixes are now taken from the actual bytes.
+
+Also adds tools/check_panel_scripts.py: it extracts each panel's script and runs node --check,
+because a SyntaxError there leaves the panel visible but completely dead - which is exactly what
+happened to the Phira panel, whose tab handler had been nested inside itself by an earlier edit.
+That is now repaired too. Suite is 29 checks.
