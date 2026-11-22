@@ -269,6 +269,35 @@ def main() -> int:
         else:
             print('  SKIP NDK clang unavailable')
 
+        # These two guard boundaries that fail silently: a module missing a native
+        # library it loads still installs and starts, and a wrong network permission
+        # only shows up as "sync failed" on a device. Both are cheap to check here.
+        print('== module ships every native library it loads ==')
+        script = MODULE / 'tests' / 'native_libraries_test.py'
+        if script.is_file():
+            code, output = run([sys.executable, str(script)], MODULE_REPO)
+            print(f'  {"PASS" if code == 0 else "FAIL"} native library completeness')
+            for line in output.splitlines():
+                if line.startswith(('PASS', 'FAIL', 'SKIP')) and not line.startswith(('PASS all', 'PASS offline')):
+                    print(f'       {line}')
+            total_pass += 1 if code == 0 else 0
+            total_fail += 0 if code == 0 else 1
+        else:
+            print('  SKIP test script missing')
+
+        print('== network boundary: offline blocked, modules inherit host ==')
+        script = MODULE / 'tests' / 'network_boundary_test.py'
+        if script.is_file():
+            code, output = run([sys.executable, str(script)], MODULE_REPO)
+            print(f'  {"PASS" if code == 0 else "FAIL"} permission split')
+            for line in output.splitlines():
+                if line.startswith(('FAIL', 'SKIP')):
+                    print(f'       {line}')
+            total_pass += 1 if code == 0 else 0
+            total_fail += 0 if code == 0 else 1
+        else:
+            print('  SKIP test script missing')
+
     print()
     print(f'{total_pass} passed, {total_fail} failed')
     return 1 if total_fail else 0
