@@ -4,6 +4,23 @@ import android.content.SharedPreferences;
 public final class NativeControls {
     private NativeControls(){}
     private static native boolean configure(int mode,int target,int accuracy,boolean blockTouch,int assistGuard,int guardScore,int[] rules);
+    /**
+     * Translate the panel's protection kind to the planner's.
+     *
+     * The panel numbers them AP=1, FC=2, score=3; the planner numbers them score=1, FC=2,
+     * AP=3. Only FC agrees, so passing the panel value straight through made "protect AP"
+     * behave as "protect a zero score floor" (an all-Perfect run) and made "protect score"
+     * behave as protect-AP. Kept in one place so both products cannot drift again.
+     */
+    public static int plannerGuard(int panelKind) {
+        switch (panelKind) {
+            case 1: return 3;   // protect AP
+            case 2: return 2;   // protect FC
+            case 3: return 1;   // protect score
+            default: return 0;  // none
+        }
+    }
+
     static native boolean configureForcedResult(boolean enabled,int score,int accuracy,int perfect,int good,int bad,int miss,int combo,boolean earlyLateOn,int early,int late,int symbol);
     private static native int[] status();
     public static SharedPreferences preferences(Context c) {return c.getSharedPreferences("offline_controls",Context.MODE_PRIVATE);}
@@ -33,7 +50,7 @@ public final class NativeControls {
     public static void apply(ControlsConfig c) {apply(c,true,c.guardKind,c.guardScore);}
     public static void apply(ControlsConfig c,boolean block,int guard,int score) {
         if(guard<0||guard>3||score<0||score>1000000)throw new IllegalArgumentException("成绩保护参数无效");
-        if(LaunchActivity.isNativeLoaded() && !configure(c.mode,c.target,c.accuracy,block,guard,score,c.packed))
+        if(LaunchActivity.isNativeLoaded() && !configure(c.mode,c.target,c.accuracy,block,plannerGuard(guard),score,c.packed))
             throw new IllegalArgumentException("原生控制拒绝此配置");
     }
     public static void save(Context context,ControlsConfig c){

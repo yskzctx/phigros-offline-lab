@@ -1,75 +1,271 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'"><title>Phigros 离线控制</title><style>
-:root{color-scheme:light;--blue:#2563eb;--ink:#17283c;--muted:#526477;--line:#ccd6e2;--paper:#f1f5f9}*{box-sizing:border-box}html,body{margin:0;height:100%;background:var(--paper);color:var(--ink);font:15px/1.45 system-ui,-apple-system,"Microsoft YaHei",sans-serif}button,input,select{font:inherit}button{cursor:pointer;min-height:44px;border:1px solid var(--line);border-radius:10px;background:white;color:var(--ink);padding:8px 15px;font-weight:650}button:active{transform:translateY(1px)}button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #93c5fd;outline-offset:2px}button.primary{background:var(--blue);color:white;border-color:var(--blue)}button.danger{color:#bc3535;background:#fff7f7;border-color:#edc9c9}.app{height:100dvh;height:100vh;display:flex;flex-direction:column}.tabs{display:flex;gap:7px;padding:8px 12px;background:white;border-bottom:1px solid var(--line)}.tab{flex:1}.tab.active{color:white;background:var(--blue);border-color:var(--blue)}.pages{flex:1;overflow:auto;padding:12px;min-height:0}.page{display:none}.page.active{display:block}.card{padding:14px;background:white;border:1px solid #dae2eb;border-radius:13px;margin-bottom:10px}.card h2{font-size:16px;margin:0 0 8px}.muted{font-size:13px;color:var(--muted);margin:6px 0 0}.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.between{justify-content:space-between}.grow{flex:1}.mode{display:grid;grid-template-columns:repeat(2,1fr);gap:7px}.mode button.active{border:2px solid var(--blue);background:#eaf2ff;color:#174fb9;padding:7px 9px}.field{display:block;margin-top:12px}.field>span{display:block;font-size:13px;font-weight:650;margin-bottom:5px}input,select{width:100%;min-height:44px;border:1.5px solid #b8c7d8;border-radius:9px;background:#fff;color:#17283c;padding:9px 11px}input::placeholder{color:#73879d}input[type=checkbox]{width:22px;min-height:22px;accent-color:var(--blue)}.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}.switch{display:flex;align-items:center;gap:9px;font-size:16px;font-weight:650}.pill{font-size:12px;border-radius:20px;padding:3px 9px;background:#eaf2ff;color:#2158a6}.status{background:#eef8f4;border-color:#c7e1d4;color:#245a45;font-size:13px}.status strong{display:block;font-size:14px}.footer{flex:none;padding:9px 12px;background:white;border-top:1px solid var(--line);display:flex;gap:8px}.footer .primary{flex:1}.rule{background:white;border:1px solid #d8e2ec;border-radius:11px;padding:12px;margin-bottom:10px}.rule-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}.rule-head .actions{display:flex;gap:6px}.rule-head button{padding:6px 10px;font-size:13px}.empty{text-align:center;padding:23px 8px;color:#617488}.hidden{display:none!important}.toast{position:fixed;bottom:76px;left:12px;right:12px;background:#eaf2ff;color:#174fb9;border:1px solid #93b8ee;border-radius:10px;padding:12px;text-align:center;box-shadow:0 6px 20px #132a4318;z-index:4}.history-actions{display:flex;gap:9px;flex-wrap:wrap}.history-actions button{flex:1;min-width:170px}.pending{background:#fff5de;color:#7a540e;border:1px solid #e8d4a5;padding:9px 11px;border-radius:8px;margin-top:8px;font-size:13px}.kbd{font-size:12px;color:#60748b}.rule-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.rule .field{margin-top:0}.section-top{margin-bottom:10px}.dirty{color:#ae610a}@media(max-width:390px){.two,.rule-grid{grid-template-columns:1fr}.mode{gap:5px}.mode button{padding:8px 4px;font-size:14px}.footer button{padding:8px 10px}.card{padding:12px}}
-@media(min-width:540px){#play.active{display:grid;grid-template-columns:190px minmax(0,1fr);gap:10px}#play>.card{margin:0;padding:12px}#play>.card h2{display:none}#runtime{grid-column:1/-1}.field{margin-top:8px}}.switch{min-height:44px}
-.choice-trigger{width:100%;text-align:left;font-weight:500;border:1.5px solid #b8c7d8}.choice-sheet{position:fixed;inset:0;z-index:10;background:var(--paper);display:flex;flex-direction:column;padding:12px;gap:10px}.choice-header{display:flex;align-items:center;justify-content:space-between;gap:10px;flex:none}.choice-header h2{margin:0;font-size:17px}.choice-options{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;display:flex;flex-direction:column;gap:7px}.choice-options button{flex:none;text-align:left;font-weight:500}.choice-options button[aria-pressed=true]{background:#eaf2ff;color:#174fb9;border:2px solid var(--blue)}.choice-footer{margin:0;flex:none;font-size:12px;color:var(--muted)}
-</style></head><body><main class="app">
-<nav class="tabs" aria-label="设置页面"><button class="tab active" data-tab="play">游玩</button><button class="tab" data-tab="rules">判定规则 <span id="rule-count">0</span></button><button class="tab" data-tab="history">存档</button></nav>
-<div class="pages">
-<details id="usage-disclaimer" class="card"><summary><strong>免责声明与使用范围 · 请阅读</strong></summary><p class="muted" style="white-space:pre-line">本项目为非官方实验工具，与 Phigros、Phira 官方及资源权利人无隶属关系，不代表官方认可或背书。游戏、音乐、谱面、插画与皮肤等权利归各自权利人所有；本项目不额外授予资源的使用或再分发权利。
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'">
+<title>Phigros 控制</title><style>
+:root{color-scheme:light;--blue:#2563eb;--blue-weak:#eaf2ff;--ink:#17283c;--muted:#5b6b7d;--line:#d4dde8;--paper:#eef2f7;--card:#fff;--ok:#0f7a4d;--warn:#a15c00}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:var(--paper);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Microsoft YaHei",sans-serif}
+body{padding-bottom:76px}
+button,input,select,summary{font:inherit}
+button{cursor:pointer;min-height:44px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink);padding:0 14px}
+button:active{transform:scale(.99)}
+button.primary{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:600}
+button.ghost{background:var(--blue-weak);border-color:#cfe0fb;color:#1c4f9c}
+button.danger{background:#fff1f1;border-color:#f2c7c7;color:#a11b1b}
+input[type=text],input[type=number],select{min-height:44px;border:1px solid var(--line);border-radius:10px;background:#fff;padding:0 12px;width:100%}
+input:focus,select:focus,button:focus-visible,summary:focus-visible{outline:2px solid var(--blue);outline-offset:1px}
 
-自动游玩、判定干预、全 AP 与目标 RKS 所产生的数据为模拟数据，不是真实手动游玩成绩，不得据此冒充正常成绩或制作误导性证明。
+/* ---- top bar + tabs ---- */
+.top{position:sticky;top:0;z-index:20;background:var(--paper);padding:10px 14px 0}
+.title{font-size:19px;font-weight:700;margin:0 0 8px}
+.tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;-webkit-overflow-scrolling:touch}
+.tab{flex:0 0 auto;min-height:40px;border-radius:999px;background:#fff;border:1px solid var(--line);padding:0 16px;color:var(--muted);font-weight:600}
+.tab.active{background:var(--blue);border-color:var(--blue);color:#fff}
 
-测试软件可能崩溃、漏判、误判、损坏或改变存档；请先备份，并核对适配版本。仅使用本人有权使用的游戏、谱面和皮肤，不提供购买、账号、服务器、签名完整性或反作弊校验绕过。
+main{padding:4px 14px 0}
+.page{display:none}
+.page.active{display:block}
 
-本修改版仅供本地使用：独立包名与存档，不提供账号登录、排行榜、云存档或其他线上操作，不声明网络权限。不得将模拟记录上传在线服务。
+/* ---- cards ---- */
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin:10px 0}
+.card h2{font-size:16px;margin:0 0 4px}
+.card .hint{color:var(--muted);font-size:13px;margin:2px 0 10px}
+.row{display:flex;gap:10px;align-items:center}
+.row.between{justify-content:space-between}
+.grow{flex:1;min-width:0}
+.field{display:block;margin:10px 0}
+.field>span{display:block;font-size:13px;color:var(--muted);margin-bottom:5px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:360px){.two{grid-template-columns:1fr}}
 
-本说明用于告知权属、功能边界与已知风险，不替代合法授权，不构成免责承诺，也不免除依法应承担的责任。有问题可到对应 GitHub 仓库 Issues 反馈；请勿公开私人存档、账号凭据、签名密钥或设备日志。</p></details>
+/* ---- switches ---- */
+.switch{display:flex;align-items:center;gap:10px;min-height:44px;font-weight:600}
+.switch input{width:22px;height:22px;flex:0 0 auto}
+.pill{font-size:12px;padding:3px 9px;border-radius:999px;background:var(--blue-weak);color:#1c4f9c;font-weight:600}
+.pill.off{background:#eef1f5;color:var(--muted)}
+
+/* ---- segmented mode picker ---- */
+.modes{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.modes button{min-height:52px;text-align:left;padding:8px 12px;line-height:1.25}
+.modes button.active{background:var(--blue);border-color:var(--blue);color:#fff}
+.modes button small{display:block;font-size:11px;opacity:.8;font-weight:400}
+
+/* ---- collapsible advanced blocks ---- */
+details.adv{border:1px solid var(--line);border-radius:12px;background:#fff;margin:10px 0;overflow:hidden}
+details.adv>summary{list-style:none;cursor:pointer;padding:13px 14px;font-weight:600;display:flex;justify-content:space-between;align-items:center;min-height:48px}
+details.adv>summary::-webkit-details-marker{display:none}
+details.adv>summary::after{content:"展开";font-size:12px;color:var(--blue);font-weight:600}
+details.adv[open]>summary::after{content:"收起"}
+details.adv>div{padding:0 14px 14px}
+
+/* ---- status / messages ---- */
+.status{border-left:4px solid var(--blue);background:#f7faff}
+.status strong{display:block;margin-bottom:2px}
+.status span{color:var(--muted);font-size:13px;white-space:pre-wrap}
+.pending{background:#fffaf0;border:1px solid #f0dcb8;color:var(--warn);border-radius:10px;padding:10px 12px;font-size:13px;margin-top:10px}
+.hidden{display:none!important}
+.muted{color:var(--muted);font-size:13px;margin:4px 0 0}
+.actions{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
+.actions button{flex:1 1 46%}
+
+/* ---- rules list ---- */
+.rule{display:flex;gap:8px;align-items:center;background:#f8fafc;border:1px solid var(--line);border-radius:10px;padding:8px;margin:8px 0;font-size:13px}
+.rule .grow{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rule button{min-height:36px;padding:0 10px}
+
+/* ---- footer action bar ---- */
+.footer{position:fixed;left:0;right:0;bottom:0;z-index:30;display:flex;gap:10px;padding:10px 14px calc(10px + env(safe-area-inset-bottom));background:rgba(238,242,247,.96);border-top:1px solid var(--line);backdrop-filter:blur(6px)}
+.footer button{flex:1}
+.footer .primary{flex:1.6}
+
+/* ---- toast + sheet ---- */
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:88px;z-index:40;background:#17283c;color:#fff;padding:11px 16px;border-radius:10px;max-width:88%;font-size:14px}
+.choice-sheet{position:fixed;inset:0;z-index:50;background:rgba(15,23,42,.45);display:flex;align-items:flex-end}
+.choice-sheet>div{background:#fff;width:100%;border-radius:16px 16px 0 0;padding:16px;max-height:80vh;overflow:auto}
+.choice-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.choice-header h2{font-size:17px;margin:0}
+#choice-options button{display:block;width:100%;text-align:left;margin:8px 0}
+</style></head><body>
+
+<div class="top">
+  <p class="title">Phigros 控制面板</p>
+  <nav class="tabs" aria-label="设置页面">
+    <button class="tab active" data-tab="play">游玩</button>
+    <button class="tab" data-tab="rules">规则 <span id="rule-count">0</span></button>
+    <button class="tab" data-tab="settle">结算</button>
+    <button class="tab" data-tab="history">存档</button>
+  </nav>
+</div>
+
+<main>
+
+<div class="card" id="usage-disclaimer" style="margin-top:10px">
+  <p class="muted" style="margin:0">自动游玩、判定干预、全 AP 与目标 RKS 所产生的数据为模拟数据，不是真实手动游玩成绩，不得据此冒充正常成绩或制作误导性证明。</p>
+</div>
+
+<!-- ============ 游玩 ============ -->
 <section id="play" class="page active">
- <div class="card"><div class="row between"><label class="switch"><input id="auto" type="checkbox">自动游玩</label><span class="pill" id="auto-label">关闭</span></div><p class="muted">冷启动默认关闭。自动会话成绩在下次冷启动恢复。判定保护必须打开自动游玩后才会在即将掉出目标时接管。</p></div>
- <div class="card"><label class="switch"><input id="block-touch" type="checkbox" checked>自动游玩时屏蔽真实触摸</label><p class="muted">关闭后，自动游玩仍输入，但手指触摸继续交给原版判定。判定保护在分数安全时保留真实触摸，临界时才接管。</p></div>
- <div class="card"><h2>这局怎么打</h2><div class="mode" role="group" aria-label="自动游玩目标"><button data-mode="0" class="active">默认 AP</button><button data-mode="1">目标分数</button><button data-mode="2">目标准确率</button><button data-mode="3">判定保护</button></div>
- <label class="field hidden" id="guard-kind"><span>保护类型</span><select id="guard-type"><option value="1">保护 AP</option><option value="2">保护 FC</option><option value="3">保护分数</option></select></label>
- <label class="field hidden" id="guard-field"><span>保护目标分数 · 1～1000000（必填）</span><input id="guard-score" type="text" inputmode="numeric" placeholder="例如 920000" maxlength="7"></label>
- <label class="field hidden" id="score-field"><span>目标分数 · 0～1000000</span><input id="score" type="text" inputmode="numeric" value="900000" placeholder="例如 900000" maxlength="7"></label>
- <label class="field hidden" id="acc-field"><span>目标准确率 · 0～100%，支持两位小数</span><input id="accuracy" type="text" inputmode="decimal" value="90" placeholder="例如 90.25" maxlength="6"></label>
- <p class="muted">用实际 Miss / Good 接近目标，Good 随机分配早晚，两侧均按 65% 计入准确率。按长条结算和判定时机预估连击；规则优先，目标可能无法精确命中。</p></div>
- <div class="card status" id="runtime"><strong>当前为手动模式</strong><span>在选曲页保存，下局使用新设置。</span></div>
+  <div class="card">
+    <div class="row between">
+      <label class="switch"><input id="auto" type="checkbox">自动游玩</label>
+      <span class="pill off" id="auto-label">关闭</span>
+    </div>
+    <p class="hint">开启后由本工具接管判定。成绩在下次冷启动恢复。</p>
+  </div>
+
+  <div class="card">
+    <h2>这局怎么打</h2>
+    <p class="hint">选一个目标，工具据此规划每个音符的判定。</p>
+    <div class="modes" role="group" aria-label="目标模式">
+      <button data-mode="0" class="active">默认 AP<small>尽量全 Perfect</small></button>
+      <button data-mode="1">目标分数<small>指定分数</small></button>
+      <button data-mode="2">目标准确率<small>指定准确率</small></button>
+      <button data-mode="3">判定保护<small>失手时救回</small></button>
+    </div>
+
+    <label class="field hidden" id="score-field"><span>目标分数 · 0～1000000</span>
+      <input id="score" type="text" inputmode="numeric" value="900000" placeholder="900000" maxlength="7"></label>
+    <label class="field hidden" id="acc-field"><span>目标准确率 · 0～100</span>
+      <input id="accuracy" type="text" inputmode="decimal" placeholder="99.5" maxlength="6"></label>
+
+    <div id="guard-kind" class="hidden">
+      <label class="field"><span>保护哪一项</span>
+        <select id="guard-type">
+          <option value="1">保护 AP（不许掉出 Perfect）</option>
+          <option value="2">保护 FC（不许 Bad / Miss）</option>
+          <option value="3">保护分数（不许低于目标）</option>
+        </select>
+      </label>
+      <label class="field hidden" id="guard-field"><span>保底分数 · 1～1000000</span>
+        <input id="guard-score" type="text" inputmode="numeric" placeholder="920000" maxlength="7"></label>
+    </div>
+  </div>
+
+  <details class="adv"><summary>高级：触摸与输入</summary><div>
+    <label class="switch"><input id="block-touch" type="checkbox" checked>自动游玩时屏蔽真实触摸</label>
+    <p class="muted">关闭后自动游玩仍会输入，但手指触摸继续交给原版判定。</p>
+  </div></details>
+
+  <div class="card status" id="runtime"><strong>当前为手动模式</strong><span>在选曲页保存，下局使用新设置。</span></div>
 </section>
-<section id="rules" class="page"><div class="row between section-top"><div><strong>按顺序执行</strong><div class="muted">重叠音符以靠前的规则为准；Perfect 可保护指定音符</div></div><button id="add" class="primary">＋ 添加规则</button></div><div id="rules-list"></div><p class="muted">编号按整张谱面的时间顺序，从 1 开始。范围包含两端；随机不重复，超出谱面长度的编号忽略。</p></section>
+
+<!-- ============ 规则 ============ -->
+<section id="rules" class="page">
+  <div class="card">
+    <div class="row between">
+      <div><h2 style="margin:0">判定规则</h2><p class="hint" style="margin:4px 0 0">按顺序执行，重叠音符以靠前的规则为准。</p></div>
+      <button id="add" class="ghost">添加</button>
+    </div>
+    <div id="rules-list"></div>
+    <p class="muted">编号按整张谱面的时间顺序，从 1 开始；范围含两端，随机不重复。</p>
+  </div>
+</section>
+
+<!-- ============ 结算 ============ -->
+<section id="settle" class="page">
+  <div class="card">
+    <h2>结算页强制显示</h2>
+    <div class="row between">
+      <label class="switch"><input id="force-enabled" type="checkbox">开启</label>
+      <span class="pill off" id="force-label">关闭</span>
+    </div>
+    <p class="hint">独立开关，与自动游玩、判定保护互不影响。只影响本机显示与本地记录，不代表真实成绩。</p>
+
+    <div class="two">
+      <label class="field"><span>分数 · 0～99999999</span><input id="force-score" type="text" inputmode="numeric" placeholder="1000000" maxlength="8"></label>
+      <label class="field"><span>准确率 · 0～100</span><input id="force-accuracy" type="text" inputmode="decimal" placeholder="99.50" maxlength="6"></label>
+    </div>
+    <div class="two">
+      <label class="field"><span>Perfect</span><input id="force-perfect" type="text" inputmode="numeric" placeholder="1000" maxlength="6"></label>
+      <label class="field"><span>Good</span><input id="force-good" type="text" inputmode="numeric" placeholder="0" maxlength="6"></label>
+    </div>
+    <div class="two">
+      <label class="field"><span>Bad</span><input id="force-bad" type="text" inputmode="numeric" placeholder="0" maxlength="6"></label>
+      <label class="field"><span>Miss</span><input id="force-miss" type="text" inputmode="numeric" placeholder="0" maxlength="6"></label>
+    </div>
+    <label class="field"><span>最大连击</span><input id="force-combo" type="text" inputmode="numeric" placeholder="1000" maxlength="6"></label>
+
+    <label class="field"><span>结算符号</span>
+      <select id="force-symbol">
+        <option value="0">不干预（按上面填的判定数）</option>
+        <option value="1">Φ　全 Perfect</option>
+        <option value="2">FC 全连（无 Bad / Miss）</option>
+      </select>
+    </label>
+    <p class="muted">符号由判定数量派生：选 Φ 会把 Perfect 设为判定总数、其余归零；选 FC 会把 Bad / Miss 归零。</p>
+
+    <div class="row between" style="margin-top:12px">
+      <label class="switch"><input id="force-early-late-on" type="checkbox">单独设置 Good 早/晚</label>
+      <span class="pill off" id="force-early-late-label">跟随判定</span>
+    </div>
+    <div class="two">
+      <label class="field"><span>Good 早</span><input id="force-early" type="text" inputmode="numeric" placeholder="0" maxlength="6"></label>
+      <label class="field"><span>Good 晚</span><input id="force-late" type="text" inputmode="numeric" placeholder="0" maxlength="6"></label>
+    </div>
+
+    <div class="actions"><button id="force-save" class="primary">保存结算显示</button><button id="force-clear">清空</button></div>
+    <div id="force-state" class="pending hidden"></div>
+  </div>
+</section>
+
+<!-- ============ 存档 ============ -->
 <section id="history" class="page">
- <div class="card"><h2>结算页强制显示</h2>
-  <div class="row between"><label class="switch"><input id="force-enabled" type="checkbox">开启强制显示</label><span class="pill" id="force-label">关闭</span></div>
-  <p class="muted">独立开关，与自动游玩、判定保护互不影响。开启后结算页显示下面填的数值，包括真实一局不可能出现的组合。仅影响本机显示与本地记录，不代表真实成绩。</p>
-  <div class="two">
-   <label class="field"><span>分数 · 0～99999999</span><input id="force-score" type="text" inputmode="numeric" placeholder="例如 1000000" maxlength="8"></label>
-   <label class="field"><span>准确率 · 0～100%</span><input id="force-accuracy" type="text" inputmode="decimal" placeholder="例如 99.50" maxlength="6"></label>
+  <div class="card">
+    <h2>目标历史 RKS</h2>
+    <p class="hint">反推每首歌的成绩来达成目标。上限 17.32 表示恢复全部 AP。</p>
+    <div class="row"><input id="rks" class="grow" type="text" inputmode="decimal" placeholder="16.25" maxlength="8"><button id="rks-apply" class="primary">应用</button></div>
+    <p class="muted">支持四位小数。重启后生效；模拟历史不是实际成绩。</p>
+    <div id="history-state" class="pending hidden"></div>
   </div>
-  <div class="two">
-   <label class="field"><span>Perfect</span><input id="force-perfect" type="text" inputmode="numeric" placeholder="例如 1000" maxlength="6"></label>
-   <label class="field"><span>Good</span><input id="force-good" type="text" inputmode="numeric" placeholder="例如 0" maxlength="6"></label>
-  </div>
-  <div class="two">
-   <label class="field"><span>Bad</span><input id="force-bad" type="text" inputmode="numeric" placeholder="例如 0" maxlength="6"></label>
-   <label class="field"><span>Miss</span><input id="force-miss" type="text" inputmode="numeric" placeholder="例如 0" maxlength="6"></label>
-  </div>
-  <label class="field"><span>结算符号</span>
-   <select id="force-symbol">
-    <option value="0">不干预（按上面填写的判定数）</option>
-    <option value="1">Φ　全 Perfect</option>
-    <option value="2">FC 全连（无 Bad / Miss）</option>
-   </select>
-  </label>
-  <p class="muted">符号由判定数量派生，选 Φ 会把 Perfect 设为判定总数、其余归零；选 FC 会把 Bad / Miss 归零。这样结算页一定能显示对应符号。</p>
-  <label class="field"><span>最大连击</span><input id="force-combo" type="text" inputmode="numeric" placeholder="例如 1000" maxlength="6"></label>
-  <div class="row between" style="margin-top:12px"><label class="switch"><input id="force-early-late-on" type="checkbox">设置 Good 早/晚</label><span class="pill" id="force-early-late-label">跟随判定</span></div>
-  <p class="muted">默认由判定数量决定。勾选后可单独指定结算页显示的 Good 早/晚计数。</p>
-  <div class="two">
-   <label class="field"><span>Good 早</span><input id="force-early" type="text" inputmode="numeric" placeholder="例如 0" maxlength="6"></label>
-   <label class="field"><span>Good 晚</span><input id="force-late" type="text" inputmode="numeric" placeholder="例如 0" maxlength="6"></label>
-  </div>
-  <div class="history-actions"><button id="force-save" class="primary">保存结算显示</button><button id="force-clear">清空</button></div>
-  <div id="force-state" class="pending hidden"></div>
- </div>
- <div class="card"><h2>目标历史 RKS</h2><div class="row"><input id="rks" class="grow" style="width:160px" type="text" inputmode="decimal" placeholder="例如 16.25" maxlength="8"><button id="rks-apply" class="primary">应用 RKS</button></div><p class="muted">支持四位小数。重启后调整历史记录；模拟历史不是实际成绩。上限 17.32 表示恢复全部 AP。</p><div id="history-state" class="pending hidden"></div></div>
- <div class="card"><h2>恢复历史成绩与全解锁</h2><div class="history-actions"><button id="all-ap" class="primary">全解锁 ＋ 全部 AP</button><button id="unlock-all">仅全解锁（保留成绩）</button><button id="restore">恢复上次备份</button></div><p class="muted">都在下次冷启动执行。“全解锁＋全部 AP”同步解锁全部曲目、收藏品、曲绘与头像并设置全 AP；“仅全解锁”保留当前成绩；“恢复备份”回退上次修改前的成绩与解锁状态。</p></div>
- <div class="card"><h2>导入 / 导出存档</h2><p id="save-state" style="margin:0">读取中…</p><div class="history-actions"><button id="save-import" class="primary">导入存档文件</button><button id="save-export">导出当前存档</button></div><p class="muted">可导入游戏原始的 playerprefs.xml，或本面板导出的 ZIP。导入会先备份当前存档，可随时恢复。导入后完全退出并重启游戏才会生效。</p><div id="save-pending" class="pending hidden"></div><div id="save-backups"></div></div>
- <div class="card"><h2>我的自制章节</h2><p class="muted">导入带音乐和插画的本地 .pez / ZIP 谱包。记录独立保存，自动游玩不保留成绩。</p><button id="chapter-open" class="primary">打开自制章节</button></div>
- <div class="card"><h2>音符皮肤</h2><p id="skin-state" style="margin:0">默认皮肤</p><button id="skin-open" class="primary" style="margin-top:10px">导入 / 选择皮肤</button><p class="muted">支持标准 Phira 音符图包及长条图集。选好或恢复默认后重启应用；判定特效和音效沿用游戏设置。</p></div>
- <div class="card"><h2>初始 Data</h2><p style="margin:0">首次使用此版准备至少 <strong>10000 MB</strong> 本地 Data。</p><p class="muted">只补一次，不减少更高余额。游戏可能自动换算为 GB；不修改正版或在线账户。</p></div>
-</section></div>
-<footer class="footer"><button id="reset">重置游玩设置</button><button id="save" class="primary">保存 · 下一局生效</button></footer>
-</main><div id="toast" class="toast hidden" role="status"></div>
-<section id="choice-sheet" class="choice-sheet hidden" role="dialog" aria-modal="true" aria-labelledby="choice-title"><div class="choice-header"><h2 id="choice-title">选择规则</h2><button id="choice-cancel">取消</button></div><div id="choice-options" class="choice-options"></div><p class="choice-footer">在面板内选择，更多选项可上下滑动。</p></section>
+
+  <details class="adv"><summary>全解锁 / 全部 AP / 恢复备份</summary><div>
+    <p class="muted">都在下次冷启动执行。</p>
+    <div class="actions">
+      <button id="all-ap" class="primary">全解锁 ＋ 全部 AP</button>
+      <button id="unlock-all">仅全解锁（保留成绩）</button>
+    </div>
+    <div class="actions"><button id="restore" class="danger">恢复上次备份</button></div>
+    <p class="muted">「全解锁＋全部 AP」解锁全部曲目、收藏品、曲绘、头像并设置全 AP；「仅全解锁」保留当前成绩；「恢复备份」回退上次修改前状态。</p>
+  </div></details>
+
+  <details class="adv"><summary>导入 / 导出存档</summary><div>
+    <p id="save-state" class="muted" style="margin-top:0">读取中…</p>
+    <div class="actions"><button id="save-import" class="primary">导入存档文件</button><button id="save-export">导出当前存档</button></div>
+    <p class="muted">可导入游戏原始 playerprefs.xml，或本面板导出的 ZIP。导入前自动备份，可随时恢复。导入后需完全退出并重启游戏。</p>
+    <div id="save-pending" class="pending hidden"></div>
+    <div id="save-backups"></div>
+  </div></details>
+
+  <details class="adv"><summary>我的自制章节</summary><div>
+    <p class="muted" style="margin-top:0">导入带音乐和插画的本地 .pez / ZIP 谱包。记录独立保存，自动游玩不保留成绩。</p>
+    <button id="chapter-open" class="primary">打开自制章节</button>
+  </div></details>
+
+  <details class="adv"><summary>音符皮肤</summary><div>
+    <p id="skin-state" class="muted" style="margin-top:0">默认皮肤</p>
+    <button id="skin-open" class="primary">导入 / 选择皮肤</button>
+    <p class="muted">支持标准 Phira 音符图包及长条图集。选好或恢复默认后重启应用。</p>
+  </div></details>
+
+  <details class="adv"><summary>初始 Data</summary><div>
+    <p class="muted" style="margin-top:0">首次使用此版准备至少 <strong>10000 MB</strong> 本地 Data。只补一次，不减少更高余额。不修改正版或在线账户。</p>
+  </div></details>
+</section>
+
+</main>
+
+<footer class="footer">
+  <button id="reset">重置</button>
+  <button id="save" class="primary">保存 · 下一局生效</button>
+</footer>
+
+<div id="toast" class="toast hidden" role="status"></div>
+<section id="choice-sheet" class="choice-sheet hidden" role="dialog" aria-modal="true" aria-labelledby="choice-title">
+  <div><div class="choice-header"><h2 id="choice-title">选择</h2><button id="choice-cancel">关闭</button></div>
+  <div id="choice-options"></div></div>
+</section>
+
 <script>
 try{if(typeof OfflineBridge!=='undefined'&&typeof OfflineBridge.environment==='function'&&OfflineBridge.environment()!=='offline')document.querySelector('#usage-disclaimer p').textContent="本项目为非官方实验工具，与 Phigros、Phira 官方及资源权利人无隶属关系，不代表官方认可或背书。游戏、音乐、谱面、插画与皮肤等权利归各自权利人所有；本项目不额外授予资源的使用或再分发权利。\n\n自动游玩、判定干预、全 AP 与目标 RKS 所产生的数据为模拟数据，不是真实手动游玩成绩，不得据此冒充正常成绩或制作误导性证明。\n\n测试软件可能崩溃、漏判、误判、损坏或改变存档；请先备份，并核对适配版本。仅使用本人有权使用的游戏、谱面和皮肤，不提供购买、账号、服务器、签名完整性或反作弊校验绕过。\n\n模块直接使用原版现有存档，修改前备份。模块不统一断网，保留原版登录和上传流程；是否接受由原版及服务器决定，不承诺上传成功。本地恢复不撤回已上传数据，使用者须遵守平台规则与资源授权。\n\n本说明用于告知权属、功能边界与已知风险，不替代合法授权，不构成免责承诺，也不免除依法应承担的责任。有问题可到对应 GitHub 仓库 Issues 反馈；请勿公开私人存档、账号凭据、签名密钥或设备日志。";}catch(ignored){}
 let mode=0,rules=[],dirty=false,initial=false;
@@ -78,7 +274,7 @@ function toast(s){$('toast').textContent=s;$('toast').classList.remove('hidden')
 function send(action,payload={}){if(hasBridge)OfflineBridge.submit(action,JSON.stringify(payload));else{if(action==='save'||action==='reset'){dirty=false;showDirty();toast('界面预览：配置已保存')}else if(action==='auto'){ $('auto-label').textContent=payload.enabled?'开启':'关闭';toast('界面预览：切换自动游玩')}else toast('界面预览：'+action+'（手机中会执行）')}}
 function showDirty(){ $('save').textContent=dirty?'保存修改 · 下一局生效':'保存 · 下一局生效'}
 function mark(){dirty=true;showDirty()}
-document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===b.dataset.tab));document.querySelector('.pages').scrollTop=0;document.querySelector('.footer').classList.toggle('hidden',b.dataset.tab==='history')});
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===b.dataset.tab));window.scrollTo(0,0);});
 let guardKind=1;function setGuard(k){guardKind=+k||1;$('guard-type').value=String(guardKind);$('guard-field').classList.toggle('hidden',mode!==3||guardKind!==3)}function setMode(m,enforce=false){mode=m;document.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('active',+b.dataset.mode===m));$('score-field').classList.toggle('hidden',m!==1);$('acc-field').classList.toggle('hidden',m!==2);$('guard-kind').classList.toggle('hidden',m!==3);setGuard(guardKind);$('block-touch').disabled=m===3;if(m===3){if(enforce&&!$('auto').checked){$('auto').checked=true;$('auto-label').textContent='开启';send('auto',{enabled:true})}}else $('auto').disabled=false}
 document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{setMode(+b.dataset.mode,true);mark()});$('guard-type').onchange=()=>{setGuard(+$('guard-type').value);mark()};
 ['score','accuracy'].forEach(id=>$(id).oninput=mark);

@@ -6,8 +6,8 @@
   "java_sources": {
     "com/phigros/offline/ControlsConfig.java": "1d7bfdec16c021f40a0cf544770babb9174bb1c460ac062e2cfef5e4f1a864c5",
     "com/phigros/offline/ForcedResult.java": "cd36c817cf667d8853cc039cf7b0493ba0fc743f614e2214cde3ff09453ef5d9",
-    "com/phigros/offline/NativeControls.java": "f7bdeefb5a7be35aa5746ea163ae1a1569883fcc59b2c7f2fbdc3f66bf8d899a",
-    "com/phigros/offline/SkinPack.java": "2296304d48563796251a7ac9f1ea6d0defe8ac117ff9ab4c6f534443812c7187",
+    "com/phigros/offline/NativeControls.java": "b5ce6a1b346d236c09f1b83ecd82178a15b5d2add3953b1dbe3e568edd4fad68",
+    "com/phigros/offline/SkinPack.java": "a2d1fe2172d8e248c61da0f7f5580642d23cbe1c1c706f732b53bc74f33dea2e",
     "com/phigros/offline/SkinController.java": "a6e8bcbd8e651818970d4d3500e9383e9e63fa198773660c3ef49f82e9810c70",
     "com/phigros/offline/SkinActivity.java": "fc7af3c322be54998a36f366ceed585342caa3b9a9ad7d0c763e9735609ff1e1",
     "com/phigros/offline/SkinStyle.java": "b6e61cfdd3842b90afdd2228050ef48b711be654738601aa5e7d68e3a944e3c0",
@@ -15,7 +15,7 @@
     "com/phigros/offline/CatalogXmlMerge.java": "8e414a1ce01a5c72bf08c65dcdef6d6cbb6135c38714996c830a7a292d8a2a4d",
     "com/phigros/offline/LaunchActivity.java": "8575c8e06b3fdc3d77df2567a4af3336a58e10a4fa495b1d1f827e71a58792f1",
     "com/phigros/offline/OverlayMenu.java": "0af242b43629a4641238c9dc8380becacc379a27843d76c279664f193eb56040",
-    "com/phigros/offline/RksEditor.java": "ebc1b82b52ee97fcee2ba464783d2b772ba901d47648f2ced454ee774d678068",
+    "com/phigros/offline/RksEditor.java": "007e5fe8824c44cbd19665f482178f3796430b94097b727315a5c1cafc04c2d3",
     "com/phigros/offline/OfflineApplication.java": "f49e008c1fec60fb56f1334f91cd90183708a9fcad3d2e6fdfa40f51ad4bd5d2",
     "com/phigros/offline/OfflineAssets.java": "6d1d6b28e8c26ea05fd69d98b246f46309dc2efe6ac2884084112e52041bb3ae",
     "com/phigros/offline/OfflineHttp.java": "698d88c6acce6a34873a6dad4cc072dbb2d955af2243be42d378936c444c7050",
@@ -33,7 +33,7 @@
     "native/skin-scale.h": "f91eb7bf2103514a1359b18a8299a7fb92d28dd7eee9bf682dcace4dbd72f742",
     "native/skins.c": "15ee103f2c6293dc664d59f32eeed2ae5a287dbf625959004ac2e08dee9a45b0"
   },
-  "controls_ui_sha256": "00855e8dacb9a547140a9f0c0e84ec56290be1d5f563ea5d2169324f438d6720",
+  "controls_ui_sha256": "7789126a02447b7865cf9fc390debb1a3562762c274ce6c5f2c50622596acba8",
   "text_line_endings": "LF; source text matches compiled inputs, line endings normalized",
   "native_build": "local Windows cross compile, nightly-2026-01-01, NDK26.3.11579264",
   "chapter_backend_sha256": "d03dba5088b4f83dcd9fe45a708938f3879e5af40a76cced02e8674de46e79a8",

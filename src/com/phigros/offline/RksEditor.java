@@ -99,6 +99,28 @@ public final class RksEditor {
         return result;
     }
 
+    /**
+     * Record entries for catalog charts the save has no entry for.
+     *
+     * "全解锁" copies unlock flags out of the shipped all-ap dump, but that dump is a
+     * 157-era snapshot: 1037 Record entries against a catalog of 1072 charts. The 35 charts
+     * added later had no entry anywhere, so they stayed locked. A chart counts as unlocked
+     * once its Record key exists, so a zero-score record is enough - it unlocks the song
+     * without claiming a result. Existing records are left alone so real scores survive.
+     */
+    public static Map<String,String> missingUnlockEntries(Map<String,String> existing,
+                                                          java.util.List<RksPlanner.Chart> charts)
+            throws Exception {
+        Map<String,String> result = new LinkedHashMap<String,String>();
+        for (RksPlanner.Chart chart : charts) {
+            if (chart.key == null || !chart.key.contains(".Record.")) continue;
+            String encKey = encrypt(chart.key);
+            if (existing.containsKey(encKey)) continue;
+            result.put(encKey, encrypt("{\"s\":0,\"a\":0,\"c\":0}"));
+        }
+        return result;
+    }
+
     public static String replaceOrAppend(String raw, Map<String,String> changes) throws IOException {
         Matcher m = ENTRY.matcher(raw); StringBuffer out = new StringBuffer();
         Set<String> matched = new HashSet<String>();
@@ -248,6 +270,11 @@ public final class RksEditor {
                             while((count=in.read(buffer))!=-1)out.write(buffer,0,count);
                             Map<String,String> unlocks=unlockEntries(new String(out.toByteArray(),StandardCharsets.UTF_8));
                             updates.putAll(unlocks);
+                            // The shipped dump is a 157-era snapshot (1037 records) while the
+                            // catalog now has 1072 charts, so charts added later had no entry
+                            // and stayed locked. Give every catalog chart the save lacks a
+                            // zero-score record - enough to unlock, without inventing a result.
+                            updates.putAll(missingUnlockEntries(updates,charts));
                         }
                     }
                     File backup=new File(backups,Long.toString(System.currentTimeMillis()));

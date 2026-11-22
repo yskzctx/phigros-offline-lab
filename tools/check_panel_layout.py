@@ -89,11 +89,12 @@ def main() -> int:
     with tempfile.TemporaryDirectory() as tmp:
         page = Path(tmp) / 'probe.html'
         html = SOURCE.read_text(encoding='utf-8')
-        # Show the history tab so its card is laid out.
+        # Show the settlement tab so its card is laid out. The panel now separates
+        # settlement from the archive tab, so this targets `settle`.
         html = html.replace('<section id="play" class="page active">',
                             '<section id="play" class="page">')
-        html = html.replace('<section id="history" class="page">',
-                            '<section id="history" class="page active">')
+        html = html.replace('<section id="settle" class="page">',
+                            '<section id="settle" class="page active">')
         html = html.replace('<script>', f'<script>{probe}\n', 1)
         # Write with the BOM-less UTF-8 the page itself declares; writing through a
         # locale-default encoder would mangle the Chinese labels.

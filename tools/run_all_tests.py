@@ -298,6 +298,22 @@ def main() -> int:
         else:
             print('  SKIP test script missing')
 
+        print('== panel UI keeps its id contract ==')
+        for label, script in (
+            ('offline + Phigros module', REPO / 'tools' / 'check_ui_contract.py'),
+            ('Phira module', MODULE_REPO / 'tools' / 'check_phira_ui.py'),
+        ):
+            if not script.is_file():
+                print(f'  SKIP {label}: {script.name} missing')
+                continue
+            code, output = run([sys.executable, str(script)], REPO)
+            print(f'  {"PASS" if code == 0 else "FAIL"} {label}')
+            for line in output.splitlines():
+                if line.startswith(('FAIL', 'SKIP')):
+                    print(f'       {line}')
+            total_pass += 1 if code == 0 else 0
+            total_fail += 0 if code == 0 else 1
+
         print('== the module never hides or blocks login ==')
         script = REPO / 'tools' / 'check_module_no_login_block.py'
         if script.is_file():

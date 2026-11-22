@@ -134,7 +134,7 @@ public final class SkinPack {
                 CRC32 crc=new CRC32();for(int shift=24;shift>=0;shift-=8)crc.update(kind>>shift&255);
                 if(chunkCount==1){if(kind!=0x49484452||length!=13)throw new IOException("PNG 缺少 IHDR");byte[] header=new byte[13];in.readFully(header);crc.update(header);
                     w=((header[0]&255)<<24)|((header[1]&255)<<16)|((header[2]&255)<<8)|(header[3]&255);h=((header[4]&255)<<24)|((header[5]&255)<<16)|((header[6]&255)<<8)|(header[7]&255);
-                    if(w<1||h<1||w>4096||h>4096||(long)w*h>4L*1024*1024)throw new IOException("图片限4096边长及400万像素");
+                    if(w<1||h<1||w>8192||h>8192||(long)w*h>32L*1024*1024)throw new IOException("图片过大（上限 8192 边长、3200 万像素）");
                 }else{if(kind==0x49484452)throw new IOException("重复 PNG IHDR");int left=length;while(left>0){int n=Math.min(left,buf.length);in.readFully(buf,0,n);crc.update(buf,0,n);left-=n;}}
                 if((int)crc.getValue()!=in.readInt())throw new IOException("PNG CRC 不符");if(kind==0x49444154&&length>0)data=true;if(kind==0x49454e44){if(length!=0)throw new IOException("PNG IEND 无效");end=true;}
             }
