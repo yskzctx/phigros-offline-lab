@@ -38,7 +38,8 @@ import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
-MODULE_REPO = REPO.parent / 'phigros-phira-lsposed-lab'
+MODULE_REPO = REPO.parent / 'phigros-lsposed'
+PHIRA_REPO = REPO.parent / 'phira-lsposed'
 MODULE = MODULE_REPO / 'modules' / 'phigros'
 
 # Files whose content is shared verbatim with the module.

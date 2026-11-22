@@ -20,7 +20,7 @@ import sys
 import zipfile
 from pathlib import Path
 
-MODULE_DIR = Path(r'I:\dsh\work\phigros-phira-lsposed-lab\modules\phigros')
+MODULE_DIR = Path(r'I:\dsh\work\phigros-lsposed')
 RELEASE_DIR = Path(r'I:\dsh\work\release\modules')
 
 # Names that only exist to suppress the login surface.

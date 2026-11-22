@@ -18,7 +18,7 @@
 | **Phigros 模块** | `Phigros-Lab-LSPosed-157-161-arm64-v0.7.1-TEST.apk` | 原版 4.0.1(157) **或** 4.1.0(161) | ✅ 继承宿主 |
 | **Phira 模块** | `Phira-Lab-LSPosed-0.8.3-arm64-v0.5.0-TEST.apk` | Phira 0.8.3 arm64 | ✅ 继承宿主 |
 
-模块仓库：[phigros-phira-lsposed-lab](https://github.com/yskzctx/phigros-phira-lsposed-lab)
+模块仓库：[Phigros 模块](https://github.com/yskzctx/phigros-lsposed) · [Phira 模块](https://github.com/yskzctx/phira-lsposed)
 
 **关键区别**：离线版是独立 APK，完全不联网；两个模块注入原版进程，保留宿主联网能力（登录、云存档、排行榜正常）。
 

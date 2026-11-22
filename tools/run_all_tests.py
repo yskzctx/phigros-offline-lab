@@ -20,7 +20,9 @@ import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
-MODULE_REPO = REPO.parent / 'phigros-phira-lsposed-lab'
+PHIGROS_REPO = REPO.parent / 'phigros-lsposed'
+PHIRA_REPO = REPO.parent / 'phira-lsposed'
+MODULE_REPO = PHIGROS_REPO   # kept for the existing phigros-oriented checks
 MODULE = MODULE_REPO / 'modules' / 'phigros'
 
 # C regression tests: (name, source, extra args)
@@ -32,10 +34,12 @@ C_TESTS = [
     ('skin_scale', 'tests/skin_scale_test.c', ['-lm']),
     ('promotion_mode', 'tests/promotion_mode_test.c', []),
 ]
+# After the repository split each module is the root of its own repo, so the
+# `modules/<name>/` prefix is gone.
 MODULE_C_TESTS = [
-    ('cloud_guard', 'modules/phigros/tests/cloud_guard_test.c', []),
-    ('attachment_order', 'modules/phigros/tests/attachment-order-test.c', []),
-    ('phira_guard', 'modules/phira/tests/guard_rescue_test.c', ['-I', 'modules/phira/native']),
+    ('cloud_guard', 'tests/cloud_guard_test.c', []),
+    ('attachment_order', 'tests/attachment-order-test.c', []),
+    ('phira_guard', 'tests/guard_rescue_test.c', ['-I', 'native']),
 ]
 
 C_FLAGS = ['-O2', '-std=c11', '-Wall', '-Wextra', '-Werror',
@@ -175,12 +179,21 @@ def main() -> int:
     else:
         print('  SKIP no C compiler on PATH')
     print('== C regression tests (module) ==')
-    if compiler and MODULE_REPO.is_dir():
-        p, f = c_suite(compiler, MODULE_REPO, MODULE_C_TESTS, 'module')
-        total_pass += p
-        total_fail += f
+    if compiler:
+        for label, repo, tests in (
+            ('module', MODULE_REPO, [t for t in MODULE_C_TESTS if not t[0].startswith('phira')]),
+            ('module', PHIRA_REPO, [t for t in MODULE_C_TESTS if t[0].startswith('phira')]),
+        ):
+            if not repo.is_dir():
+                print(f'  SKIP {repo.name} missing')
+                continue
+            if not tests:
+                continue
+            p, f = c_suite(compiler, repo, tests, label)
+            total_pass += p
+            total_fail += f
     else:
-        print('  SKIP module repo or compiler unavailable')
+        print('  SKIP no C compiler on PATH')
 
     if args.quick:
         print('== JDK/NDK builds ==')
@@ -248,10 +261,10 @@ def main() -> int:
 
         print('== Java compile (module) ==')
         api_jar = Path(r'C:\Users\yskzc\Android\api-82.jar')
-        if javac and android_jar.is_file() and api_jar.is_file() and MODULE.is_dir():
+        if javac and android_jar.is_file() and api_jar.is_file() and MODULE_REPO.is_dir():
             out = Path(os.environ.get('TEMP', '/tmp')) / 'dsh-module-java'
             shutil.rmtree(out, ignore_errors=True)
-            sources = sorted(str(p) for p in (MODULE / 'src').rglob('*.java'))
+            sources = sorted(str(p) for p in (MODULE_REPO / 'src').rglob('*.java'))
             code, output = run([javac, '--release', '8', '-encoding', 'UTF-8',
                                 '-cp', f'{android_jar}{os.pathsep}{api_jar}',
                                 '-d', str(out), *sources], MODULE_REPO)
@@ -266,9 +279,9 @@ def main() -> int:
 
         print('== NDK native compile (module) ==')
         ndk_clang = Path(r'C:\Users\yskzc\Android\Sdk\ndk\26.3.11579264\toolchains\llvm\prebuilt\windows-x86_64\bin\aarch64-linux-android26-clang.cmd')
-        if ndk_clang.is_file() and MODULE.is_dir():
-            for label, source in (('libphigros_lsp.so', MODULE / 'native' / 'lsp-entry.c'),
-                                  ('libphira.so', MODULE_REPO / 'modules' / 'phira' / 'native' / 'module.c')):
+        if ndk_clang.is_file() and MODULE_REPO.is_dir():
+            for label, source in (('libphigros_lsp.so', MODULE_REPO / 'native' / 'lsp-entry.c'),
+                                  ('libphira.so', PHIRA_REPO / 'native' / 'module.c')):
                 target = Path(os.environ.get('TEMP', '/tmp')) / f'dsh-{label}'
                 code, output = run([str(ndk_clang), '-shared', '-fPIC', '-O2', '-std=c11',
                                     '-Wall', '-Wextra', '-Werror', '-Wno-unused-function',
@@ -287,7 +300,7 @@ def main() -> int:
         # library it loads still installs and starts, and a wrong network permission
         # only shows up as "sync failed" on a device. Both are cheap to check here.
         print('== module ships every native library it loads ==')
-        script = MODULE / 'tests' / 'native_libraries_test.py'
+        script = MODULE_REPO / 'tests' / 'native_libraries_test.py'
         if script.is_file():
             code, output = run([sys.executable, str(script)], MODULE_REPO)
             print(f'  {"PASS" if code == 0 else "FAIL"} native library completeness')
@@ -302,7 +315,7 @@ def main() -> int:
         print('== panel UI keeps its id contract ==')
         for label, script in (
             ('offline + Phigros module', REPO / 'tools' / 'check_ui_contract.py'),
-            ('Phira module', MODULE_REPO / 'tools' / 'check_phira_ui.py'),
+            ('Phira module', PHIRA_REPO / 'tools' / 'check_phira_ui.py'),
         ):
             if not script.is_file():
                 print(f'  SKIP {label}: {script.name} missing')
@@ -329,7 +342,7 @@ def main() -> int:
             print('  SKIP guard script missing')
 
         print('== network boundary: offline blocked, modules inherit host ==')
-        script = MODULE / 'tests' / 'network_boundary_test.py'
+        script = MODULE_REPO / 'tests' / 'network_boundary_test.py'
         if script.is_file():
             code, output = run([sys.executable, str(script)], MODULE_REPO)
             print(f'  {"PASS" if code == 0 else "FAIL"} permission split')
