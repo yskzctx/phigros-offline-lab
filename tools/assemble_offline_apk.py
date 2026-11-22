@@ -71,7 +71,12 @@ PROTECTED_SUFFIXES = ('libil2cpp.so', 'libunity.so', 'classes.dex')
 
 NATIVE_TARGETS = [
     # (output name inside lib/arm64-v8a, source file, extra defines)
+    # Every library the Java layer loads must be built here or the app dies at
+    # startup with UnsatisfiedLinkError: OfflineApplication loads phigros_privacy,
+    # SkinController loads phigros_skins, LaunchActivity loads phigros_offline.
     ('libphigros_offline.so', 'src/offline.c', []),
+    ('libphigros_privacy.so', 'src/privacy.c', []),
+    ('libphigros_skins.so', 'src/skins.c', []),
 ]
 ASSET_SOURCES = [
     ('ui/controls-ui.html', 'assets/offline/controls-ui.html'),
@@ -419,6 +424,16 @@ def entry_hashes(apk: Path) -> dict[str, str]:
     return hashes
 
 
+def required_native_libraries() -> set[str]:
+    """Native library file names the Java sources load via System.loadLibrary."""
+    pattern = re.compile(r'System\.loadLibrary\(\s*"([^"]+)"\s*\)')
+    names = set()
+    for source in (REPO / 'src').rglob('*.java'):
+        for match in pattern.findall(source.read_text(encoding='utf-8', errors='replace')):
+            names.add(f'lib{match}.so')
+    return names
+
+
 def verify(sdk: Path, build_tools: str, apk: Path, base: Path) -> dict:
     zipalign = find_sdk_tool(sdk, build_tools, 'zipalign.exe' if os.name == 'nt' else 'zipalign')
     apksigner = find_sdk_tool(sdk, build_tools, 'lib/apksigner.jar')
@@ -527,6 +542,15 @@ def main() -> int:
             problems.append(f'game resources changed: {report["protected_entries_changed"][:3]}')
         if report['package'] != PACKAGE:
             problems.append(f'package is {report["package"]}, expected {PACKAGE}')
+        # Every library the Java layer loads must be present, or the app dies at
+        # startup with UnsatisfiedLinkError. This is checked from the sources rather
+        # than a fixed list so adding a loadLibrary call without a matching native
+        # target fails the build instead of the phone.
+        loaded = required_native_libraries()
+        present = {name.rsplit('/', 1)[-1] for name in report['native_libraries']}
+        missing = sorted(lib for lib in loaded if lib not in present)
+        if missing:
+            problems.append(f'Java loads libraries the APK lacks: {missing}')
         if problems:
             print()
             for problem in problems:
