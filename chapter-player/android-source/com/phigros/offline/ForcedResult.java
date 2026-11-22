@@ -17,8 +17,12 @@ public final class ForcedResult {
     public static final class Values {
         public final boolean enabled;
         public final int score,accuracy,perfect,good,bad,miss,combo;
-        Values(boolean e,int s,int a,int p,int g,int b,int m,int c){
+        /** Good 早/晚计数是否参与强制显示。默认关闭，保持旧行为（清零）。 */
+        public final boolean earlyLateOn;
+        public final int early,late;
+        Values(boolean e,int s,int a,int p,int g,int b,int m,int c,boolean eOn,int earlyValue,int lateValue){
             enabled=e;score=s;accuracy=a;perfect=p;good=g;bad=b;miss=m;combo=c;
+            earlyLateOn=eOn;early=earlyValue;late=lateValue;
         }
     }
 
@@ -40,7 +44,10 @@ public final class ForcedResult {
         int bad=bounded(p,PREFIX+"bad",0,999999,"Bad 数量");
         int miss=bounded(p,PREFIX+"miss",0,999999,"Miss 数量");
         int combo=bounded(p,PREFIX+"combo",0,999999,"最大连击");
-        return new Values(enabled,score,accuracy,perfect,good,bad,miss,combo);
+        boolean earlyLateOn=p.getBoolean(PREFIX+"early_late_on",false);
+        int early=bounded(p,PREFIX+"early",0,999999,"Good 早");
+        int late=bounded(p,PREFIX+"late",0,999999,"Good 晚");
+        return new Values(enabled,score,accuracy,perfect,good,bad,miss,combo,earlyLateOn,early,late);
     }
 
     /** 准确率用「百分数两位小数」字符串输入，内部存万分位整数。 */
@@ -58,6 +65,13 @@ public final class ForcedResult {
 
     public static Values parse(boolean enabled,String score,String accuracy,String perfect,
                                String good,String bad,String miss,String combo){
+        return parse(enabled,score,accuracy,perfect,good,bad,miss,combo,false,"","");
+    }
+
+    /** 带 Good 早/晚的解析。earlyLateOn 为假时早/晚不参与显示。 */
+    public static Values parse(boolean enabled,String score,String accuracy,String perfect,
+                               String good,String bad,String miss,String combo,
+                               boolean earlyLateOn,String early,String late){
         return new Values(enabled,
             boundedText(score,0,99999999,"结算分数"),
             accuracy==null||accuracy.trim().isEmpty()?0:parseAccuracy(accuracy),
@@ -65,7 +79,10 @@ public final class ForcedResult {
             boundedText(good,0,999999,"Good 数量"),
             boundedText(bad,0,999999,"Bad 数量"),
             boundedText(miss,0,999999,"Miss 数量"),
-            boundedText(combo,0,999999,"最大连击"));
+            boundedText(combo,0,999999,"最大连击"),
+            earlyLateOn,
+            boundedText(early,0,999999,"Good 早"),
+            boundedText(late,0,999999,"Good 晚"));
     }
 
     private static int boundedText(String text,int low,int high,String label){
@@ -87,13 +104,17 @@ public final class ForcedResult {
             .putInt(PREFIX+"good",v.good)
             .putInt(PREFIX+"bad",v.bad)
             .putInt(PREFIX+"miss",v.miss)
-            .putInt(PREFIX+"combo",v.combo);
+            .putInt(PREFIX+"combo",v.combo)
+            .putBoolean(PREFIX+"early_late_on",v.earlyLateOn)
+            .putInt(PREFIX+"early",v.early)
+            .putInt(PREFIX+"late",v.late);
         if(!edit.commit())throw new IllegalStateException("结算显示设置保存失败");
     }
 
     public static void apply(Values v){
         if(LaunchActivity.isNativeLoaded()&&!NativeControls.configureForcedResult(
-                v.enabled,v.score,v.accuracy,v.perfect,v.good,v.bad,v.miss,v.combo))
+                v.enabled,v.score,v.accuracy,v.perfect,v.good,v.bad,v.miss,v.combo,
+                v.earlyLateOn,v.early,v.late))
             throw new IllegalArgumentException("原生层拒绝该结算显示配置");
     }
 

@@ -58,6 +58,19 @@ public class GuardAndForcedResultTest {
         ForcedResult.Values impossible = ForcedResult.parse(true, "1", "0", "999", "999", "999", "999", "999");
         check(impossible.perfect == 999 && impossible.miss == 999, "impossible combination accepted");
 
+        // ---- Good early/late are settable, and default to the old behaviour -----
+        ForcedResult.Values plain = ForcedResult.parse(true, "100", "99", "10", "5", "0", "0", "15");
+        check(!plain.earlyLateOn && plain.early == 0 && plain.late == 0,
+              "early/late default off, so an untouched config behaves as before");
+
+        ForcedResult.Values timing = ForcedResult.parse(true, "100", "99", "10", "5", "0", "0", "15",
+                                                        true, "3", "2");
+        check(timing.earlyLateOn, "early/late opt-in honoured");
+        check(timing.early == 3 && timing.late == 2, "early/late values kept");
+
+        reject("early over range", () -> ForcedResult.parse(true, "1", "", "", "", "", "", "", true, "1000000", ""));
+        reject("negative late", () -> ForcedResult.parse(true, "1", "", "", "", "", "", "", true, "", "-1"));
+
         // A score far beyond the real maximum is still accepted.
         ForcedResult.Values huge = ForcedResult.parse(true, "99999999", "100", "", "", "", "", "");
         check(huge.score == 99999999, "score above real maximum accepted");
