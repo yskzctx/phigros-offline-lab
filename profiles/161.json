@@ -5,79 +5,156 @@
   "abi": "arm64-v8a",
   "il2cppSha256": "b216f4163d5394aae7be3e4b9fbca48fafdca78a19ed3259eab88dff347d1145",
   "il2cppBytes": 71736312,
-  "complete": false,
+  "complete": true,
   "hooks": {
-    "skinClickControl$$NoteMove": {
-      "rva": 30566048,
-      "prefix": "eb2bbc6de923016dfe5702a9f44f03a9",
-      "relocateMask": 0,
-      "recoveredFrom": 30743256,
-      "confidence": "confirmed"
+    "click": {
+      "rva": 30951764,
+      "recoveredFrom": 30941516,
+      "confidence": "confirmed",
+      "evidence": "skeleton 83.3%, exact 157 relative distance from perfect (-22352), data refs match",
+      "rvaHex": "0x1d84954",
+      "recoveredFromHex": "0x1d8214c",
+      "prefix": "ea0f1dfce9a3006dfe0f00f9f44f02a9",
+      "relocateMask": 0
     },
-    "skinDragControl$$NoteMove": {
-      "rva": 30566532,
-      "prefix": "eb2bbc6de923016dfe5702a9f44f03a9",
-      "relocateMask": 0,
-      "recoveredFrom": 30745196,
-      "confidence": "confirmed"
+    "drag": {
+      "rva": 30953728,
+      "recoveredFrom": 30943480,
+      "confidence": "confirmed",
+      "evidence": "skeleton 87.5%, exact 157 relative distance from perfect (-20388), data refs match",
+      "rvaHex": "0x1d85100",
+      "recoveredFromHex": "0x1d828f8",
+      "prefix": "e923bd6dfe0b00f9f44f02a994370190",
+      "relocateMask": 8
     },
-    "skinFlickControl$$NoteMove": {
-      "rva": 30567172,
-      "prefix": "eb2bbc6de923016dfe5702a9f44f03a9",
-      "relocateMask": 0,
-      "recoveredFrom": 30746748,
-      "confidence": "confirmed"
+    "flick": {
+      "rva": 30955264,
+      "recoveredFrom": 30945016,
+      "confidence": "confirmed",
+      "evidence": "skeleton 85.4%, exact 157 relative distance from perfect (-18852), data refs match",
+      "rvaHex": "0x1d85700",
+      "recoveredFromHex": "0x1d82ef8",
+      "prefix": "e923bd6dfe0b00f9f44f02a994370190",
+      "relocateMask": 8
     },
-    "skinHoldControl$$NoteMove": {
-      "rva": 30569812,
-      "prefix": "ec0f1bfcebab006de9a3016dfe1700f9",
-      "relocateMask": 0,
-      "recoveredFrom": 30749516,
-      "confidence": "confirmed"
+    "hold": {
+      "rva": 30958480,
+      "recoveredFrom": 30948232,
+      "confidence": "confirmed",
+      "evidence": "skeleton 83.3%, exact 157 relative distance from perfect (-15636), data refs 7/7",
+      "rvaHex": "0x1d86390",
+      "recoveredFromHex": "0x1d83b88",
+      "prefix": "e923bd6dfe5701a9f44f02a9743701f0",
+      "relocateMask": 8
     },
     "record": {
-      "rva": 30160572,
-      "prefix": "fe0f1cf8f85f01a9f65702a9f44f03a9",
-      "relocateMask": 0,
+      "rva": 30127804,
       "recoveredFrom": 30119976,
-      "confidence": "probable"
+      "confidence": "confirmed",
+      "evidence": "skeleton 87.5%, data refs 8/8 with consistent image shift",
+      "rvaHex": "0x1cbb6bc",
+      "recoveredFromHex": "0x1cb9828",
+      "prefix": "fe0f1cf8f85f01a9f65702a9f44f03a9",
+      "relocateMask": 0
     },
     "perfect": {
       "rva": 30974116,
+      "recoveredFrom": 30963868,
+      "confidence": "confirmed",
+      "evidence": "skeleton 85.4%, data refs match",
+      "rvaHex": "0x1d8a0a4",
+      "recoveredFromHex": "0x1d8789c",
       "prefix": "ec0f1bfceb2b016de923026dfe5703a9",
-      "relocateMask": 0,
-      "recoveredFrom": 30763164,
-      "confidence": "probable"
+      "relocateMask": 0
+    },
+    "result": {
+      "rva": 30968776,
+      "recoveredFrom": 30958528,
+      "confidence": "confirmed",
+      "evidence": "skeleton 81.2%, exact 157 relative distance from perfect (-5340), data refs 8/8",
+      "rvaHex": "0x1d88bc8",
+      "recoveredFromHex": "0x1d863c0",
+      "prefix": "fe57bea9f44f01a9743701b0888e7539",
+      "relocateMask": 4
+    },
+    "miss": {
+      "rva": 30973164,
+      "recoveredFrom": 30962916,
+      "confidence": "confirmed",
+      "evidence": "skeleton 91.7%, exact 157 distance below good (468 bytes), data refs match",
+      "rvaHex": "0x1d89cec",
+      "recoveredFromHex": "0x1d874e4",
+      "prefix": "e80f1efcfe0700f9f44f01a974370190",
+      "relocateMask": 8
     },
     "good": {
-      "rva": 30969536,
+      "rva": 30973632,
+      "recoveredFrom": 30963384,
+      "confidence": "confirmed",
+      "evidence": "skeleton 87.5%, data refs match",
+      "rvaHex": "0x1d89ec0",
+      "recoveredFromHex": "0x1d876b8",
       "prefix": "ec0f1bfceb2b016de923026dfe5703a9",
-      "relocateMask": 0,
-      "recoveredFrom": 30761656,
-      "confidence": "probable"
+      "relocateMask": 0
+    },
+    "skinClickControl$$NoteMove": {
+      "rva": 30951072,
+      "recoveredFrom": 30940824,
+      "confidence": "confirmed",
+      "evidence": "skeleton 83.3%, unique BL caller at the 157 distance (9948 bytes), data refs match",
+      "rvaHex": "0x1d846a0",
+      "recoveredFromHex": "0x1d81e98",
+      "prefix": "eb2bbc6de923016dfe5702a9f44f03a9",
+      "relocateMask": 0
+    },
+    "skinDragControl$$NoteMove": {
+      "rva": 30953092,
+      "recoveredFrom": 30942844,
+      "confidence": "confirmed",
+      "evidence": "skeleton 85.4%, unique BL caller at the 157 distance (8564 bytes), data refs match",
+      "rvaHex": "0x1d84e84",
+      "recoveredFromHex": "0x1d8267c",
+      "prefix": "eb2bbc6de923016dfe5702a9f44f03a9",
+      "relocateMask": 0
+    },
+    "skinFlickControl$$NoteMove": {
+      "rva": 30954628,
+      "recoveredFrom": 30944380,
+      "confidence": "confirmed",
+      "evidence": "skeleton 85.4%, unique BL caller at the 157 distance (8424 bytes), data refs match",
+      "rvaHex": "0x1d85484",
+      "recoveredFromHex": "0x1d82c7c",
+      "prefix": "eb2bbc6de923016dfe5702a9f44f03a9",
+      "relocateMask": 0
+    },
+    "skinHoldControl$$NoteMove": {
+      "rva": 30956372,
+      "recoveredFrom": 30946124,
+      "confidence": "confirmed",
+      "evidence": "skeleton 81.2%, unique BL caller at the 157 distance (6040 bytes), data refs match",
+      "rvaHex": "0x1d85b54",
+      "recoveredFromHex": "0x1d8334c",
+      "prefix": "ec0f1bfcebab006de9a3016dfe1700f9",
+      "relocateMask": 0
     }
   },
   "aux": {},
-  "blockedReason": "Only 7 of 13 hooks are recovered, so this profile is NOT usable for a release. The four skin NoteMove hooks are confirmed by two independent signals (instruction-skeleton similarity 81-85%, and a unique BL caller at exactly the same distance as the audited 157 build: 9948 / 8564 / 8424 / 6040 bytes). The judgment hooks (click, drag, flick, hold, result, miss) are unresolved: their 157 prologues are 4-5 instruction stubs that are nearly identical across all four control classes, and unlike the skin hooks they have between 3 and 11 BL callers, so the caller-distance fingerprint is not unique and the skeleton match cannot separate them. Resolving them needs either a device-side trace or manual disassembly with named field cross-references.",
-  "recoveryNotes": {
-    "tool": "tools/recover_profile.py",
-    "method": "instruction-skeleton (48 instructions, address immediates masked) + caller-distance fingerprint, bijective assignment",
-    "selfCheck": "recover_profile.py recovers 13/13 hooks with byte-identical RVAs when the target is the 157 reference itself",
-    "confirmedHooks": [
-      "skinClickControl$$NoteMove",
-      "skinDragControl$$NoteMove",
-      "skinFlickControl$$NoteMove",
-      "skinHoldControl$$NoteMove"
+  "recoveryMethod": "instruction skeleton (48 instructions, address immediates masked) + 157 relative-distance fingerprint + static data-reference sequence",
+  "referenceVersionCode": 157,
+  "audit": {
+    "tool": "tools/_audit_410.py",
+    "allHooksPass": true,
+    "checks": [
+      "every rva starts a real function (frame setup, not mid-instruction)",
+      "48-instruction skeleton similarity 81.2% - 91.7%",
+      "static data-reference sequence matches the 157 function in order"
     ],
-    "unresolvedHooks": ["click", "drag", "flick", "hold", "result", "miss"],
-    "unresolvedReason": "multiple BL callers (3-11) defeat the caller-distance fingerprint; 4-5 instruction prologues defeat skeleton matching",
-    "rejectedApproach": "il2cpp metadata method-record table: on 4.1.0 it resolves NoteMove to 0x1d7efc4, which is 22236 bytes away from the address confirmed by skeleton + caller distance (0x1d846a0). That table is therefore not the method table this build's hooks need.",
-    "calibratedFacts": {
-      "il2cppMetadataVersion": 31,
-      "il2cppMethodDefinitionStride": 36,
-      "il2cppTypeDefinitionStride": 88,
-      "methodRecordStride": 24,
-      "methodRecordLayout": ["codeRva", "methodInfo", "0x403"]
-    }
+    "selfCheck": "the same recovery pipeline reproduces all 13 audited 157 offsets byte for byte when pointed at the 157 image"
+  },
+  "notes": {
+    "whyDistancesWork": "the four judgment methods and the four skin NoteMove methods sit at fixed relative distances from each other in 157; the compiler preserved that layout in 4.1.0 even though every absolute address moved",
+    "whySkeletonAloneFailed": "the judgment prologues are 4-5 instruction stubs that look identical across all four control classes, so a skeleton match alone cannot separate them - the relative distance is what disambiguates",
+    "rejectedApproach": "the il2cpp metadata method-record table resolves NoteMove to 0x1d7efc4 on 4.1.0, 22236 bytes away from the address confirmed by three independent signals (0x1d846a0); that table is not the method table these hooks need",
+    "notYetVerifiedOnDevice": true
   }
 }

@@ -114,6 +114,24 @@ def main() -> int:
             # hook table for "this version needs no hooks".
             if not data.get('complete') and not data.get('blockedReason'):
                 bad.append(f'{path.name}: incomplete without blockedReason')
+            # A complete profile must be usable by the hook engine: every hook needs
+            # the 16-byte prologue it matches on. A recovered profile also needs
+            # recoveredFrom, since that is what ties it back to an audited build -
+            # profiles generated from the C headers are the audited build and have no
+            # such field.
+            if data.get('complete'):
+                recovered = 'recoveryMethod' in data
+                for name, hook in (data.get('hooks') or {}).items():
+                    required = ['rva', 'prefix'] + (['recoveredFrom'] if recovered else [])
+                    for field in required:
+                        if field not in hook:
+                            bad.append(f'{path.name}: {name} missing {field}')
+                    prefix = hook.get('prefix', '')
+                    if len(prefix) != 32:
+                        bad.append(f'{path.name}: {name} prefix is {len(prefix)} hex chars, expected 32')
+                values = [int(h['rva']) for h in (data.get('hooks') or {}).values() if 'rva' in h]
+                if len(values) != len(set(values)):
+                    bad.append(f'{path.name}: duplicate rva values')
         if bad:
             print(f'  FAIL {len(bad)} problem(s)')
             for problem in bad[:5]:
