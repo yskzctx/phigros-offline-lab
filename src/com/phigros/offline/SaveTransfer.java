@@ -136,11 +136,14 @@ public final class SaveTransfer {
      * panel rather than by reinstalling.
      */
     public static File apply(Context c, Plan plan) throws IOException {
+        return applyTo(prefsFile(c), plan, backupDir(c));
+    }
+
+    /** File-level apply, so the backup/write cycle can be tested without a device. */
+    static File applyTo(File save, Plan plan, File dir) throws IOException {
         if (plan == null || plan.xml == null || plan.xml.length == 0) {
             throw new IOException("没有可导入的内容");
         }
-        File save = prefsFile(c);
-        File dir = backupDir(c);
         if (!dir.isDirectory() && !dir.mkdirs()) throw new IOException("无法创建存档备份目录");
 
         File backup = null;
@@ -168,12 +171,15 @@ public final class SaveTransfer {
 
     /** Restore one of our own backups, after backing up what is there now. */
     public static void restore(Context c, File backup) throws IOException {
-        File dir = backupDir(c);
+        restoreTo(prefsFile(c), backup, backupDir(c));
+    }
+
+    /** File-level restore, so the safety-backup cycle can be tested without a device. */
+    static void restoreTo(File save, File backup, File dir) throws IOException {
         if (!backup.getCanonicalPath().startsWith(dir.getCanonicalPath() + File.separator)) {
             throw new IOException("备份路径无效");
         }
         if (!backup.isFile()) throw new IOException("备份文件不存在");
-        File save = prefsFile(c);
         if (save.isFile() && save.length() > 0) {
             File safety = new File(dir, "before-restore-" + System.currentTimeMillis() + ".xml");
             copyAtomic(new FileInputStream(save), safety, MAX_BYTES);
@@ -199,7 +205,11 @@ public final class SaveTransfer {
 
     /** Export the current save as a portable ZIP with a manifest. */
     public static void export(Context c, OutputStream out) throws IOException {
-        File save = prefsFile(c);
+        exportFrom(prefsFile(c), out);
+    }
+
+    /** File-level export, so the ZIP layout can be tested without a device. */
+    static void exportFrom(File save, OutputStream out) throws IOException {
         if (!save.isFile()) throw new IOException("当前没有可导出的存档");
         byte[] xml = drain(new FileInputStream(save), MAX_BYTES);
         String manifest = "Phigros offline save\nentries=" + countEntries(new String(xml, StandardCharsets.UTF_8))
@@ -233,17 +243,25 @@ public final class SaveTransfer {
         Map<String, byte[]> members = new LinkedHashMap<String, byte[]>();
         ZipInputStream zip = new ZipInputStream(new ByteArrayInputStream(data));
         try {
-            ZipEntry entry;
-            int count = 0;
-            while ((entry = zip.getNextEntry()) != null) {
-                if (++count > 64) throw new IOException("压缩包条目过多");
-                if (entry.isDirectory()) continue;
-                String name = entry.getName();
-                if (name.contains("..")) throw new IOException("压缩包路径异常");
-                members.put(name, drain(zip, MAX_BYTES));
-            }
+            return unzipEntries(zip, members);
+        } catch (java.io.EOFException truncated) {
+            // A file that starts with PK but is not a complete archive.
+            throw new IOException("压缩包不完整或已损坏");
         } finally {
             zip.close();
+        }
+    }
+
+    private static Map<String, byte[]> unzipEntries(ZipInputStream zip, Map<String, byte[]> members)
+            throws IOException {
+        ZipEntry entry;
+        int count = 0;
+        while ((entry = zip.getNextEntry()) != null) {
+            if (++count > 64) throw new IOException("压缩包条目过多");
+            if (entry.isDirectory()) continue;
+            String name = entry.getName();
+            if (name.contains("..")) throw new IOException("压缩包路径异常");
+            members.put(name, drainEntry(zip, MAX_BYTES));
         }
         return members;
     }
@@ -261,6 +279,25 @@ public final class SaveTransfer {
             }
         } finally {
             in.close();
+        }
+        return out.toByteArray();
+    }
+
+    /**
+     * Read one ZIP entry without closing the archive.
+     *
+     * drain() closes its stream, which would end the whole ZipInputStream after the first
+     * entry - so an export with a save plus a manifest would only ever yield one member.
+     */
+    private static byte[] drainEntry(InputStream in, long limit) throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        byte[] buf = new byte[65536];
+        long total = 0;
+        int n;
+        while ((n = in.read(buf)) != -1) {
+            total += n;
+            if (total > limit) throw new IOException("文件过大");
+            out.write(buf, 0, n);
         }
         return out.toByteArray();
     }

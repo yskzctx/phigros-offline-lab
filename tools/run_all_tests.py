@@ -205,17 +205,30 @@ def main() -> int:
                 ('GuardAndForcedResultTest', 'com.phigros.offline.GuardAndForcedResultTest'),
                 ('SkinStyleTest', 'com.phigros.offline.SkinStyleTest'),
                 ('ForcedResultRksTest', 'com.phigros.offline.ForcedResultRksTest'),
+                ('UnknownConstantTest', 'com.phigros.offline.UnknownConstantTest'),
+                ('SaveTransferTest', 'com.phigros.offline.SaveTransferTest'),
             ]
             test_out = Path(os.environ.get('TEMP', '/tmp')) / 'dsh-offline-javatest'
             shutil.rmtree(test_out, ignore_errors=True)
             test_sources = [str(REPO / 'tests' / f'{name}.java') for name, _cls in java_tests]
+            # android.jar's Log throws "Stub!" on every call, so tests that exercise a
+            # logging class need a real shim ahead of it on the classpath.
+            shims = sorted(str(p) for p in (REPO / 'tests' / 'shim').rglob('*.java'))
+            shim_out = Path(os.environ.get('TEMP', '/tmp')) / 'dsh-offline-shim'
+            shutil.rmtree(shim_out, ignore_errors=True)
+            if shims:
+                run([javac, '--release', '8', '-encoding', 'UTF-8', '-d', str(shim_out),
+                     *shims], REPO)
+            classpath = os.pathsep.join(
+                [str(shim_out), str(android_jar)] if shims else [str(android_jar)])
             code, output = run([javac, '--release', '8', '-encoding', 'UTF-8',
-                                '-cp', str(android_jar), '-d', str(test_out),
+                                '-cp', classpath, '-d', str(test_out),
                                 *sources, *test_sources], REPO)
             if code == 0:
                 env = dict(os.environ, JAVA_TOOL_OPTIONS='-Dfile.encoding=UTF-8')
                 for name, cls in java_tests:
-                    completed = subprocess.run(['java', '-cp', str(test_out), cls],
+                    run_cp = os.pathsep.join([str(test_out), str(shim_out)])
+                    completed = subprocess.run(['java', '-cp', run_cp, cls],
                                                capture_output=True, text=True, env=env, errors='replace')
                     ok = completed.returncode == 0
                     last = completed.stdout.strip().splitlines()[-1] if completed.stdout.strip() else ''
