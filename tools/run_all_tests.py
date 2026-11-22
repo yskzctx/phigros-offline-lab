@@ -152,6 +152,19 @@ def main() -> int:
     total_pass += 1 if code == 0 else 0
     total_fail += 0 if code == 0 else 1
 
+    # The headers are what the native code compiles in, so a profile that disagrees
+    # with them is a profile that does not describe the shipped binary.
+    print('== C headers match the 157 profile ==')
+    code, output = run([sys.executable, 'tools/gen_hooks_header.py',
+                        '--profile', 'profiles/157.json', '--check'], REPO)
+    print(f'  {"PASS" if code == 0 else "FAIL"} src/expected-hooks.h, src/skin-hooks.h')
+    if code:
+        for line in output.splitlines():
+            if line.startswith('FAIL'):
+                print(f'       {line}')
+    total_pass += 1 if code == 0 else 0
+    total_fail += 0 if code == 0 else 1
+
     compiler = find_tool('gcc', 'cc', 'clang')
     print('== C regression tests (offline) ==')
     if compiler:
