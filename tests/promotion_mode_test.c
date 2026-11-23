@@ -39,15 +39,11 @@ int main(void) {
     assert(!promoting());                   /* mode 3 is the planner, not promotion */
 
     chart_config.mode = 4;
-    chart_config.assist_guard = 1;
-    assert(!promoting());                   /* auto toggle off -> inactive */
-
-    atomic_store(&enabled, true);           /* auto on: the tool is active */
     chart_config.assist_guard = 0;
     assert(!promoting());                   /* no kind selected */
 
     chart_config.assist_guard = 1;
-    assert(promoting());
+    assert(promoting());                    /* mode 4 + kind = active (auto gating is in the panel) */
 
     /* ---- 2. protect AP (kind 1): everything non-Perfect is covered --------- */
     reset_score();

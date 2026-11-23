@@ -222,11 +222,11 @@ static void promote_judgment(void *score,int judgment) {
 
 // Is promotion the active protection? mode 4, with a kind selected.
 static bool promoting(void) {
-    // Requires the auto toggle (the master enable) to be on: protection is part of the tool, so
-    // it does nothing while the tool is off. In mode 4 the auto toggle does not inject input -
-    // automatic() returns the original - so this only gates the rewrite.
-    return atomic_load(&ready) && atomic_load(&enabled)
-        && chart_config.mode==4 && chart_config.assist_guard>=1;
+    // Mode 4 with a protection kind selected. It deliberately does NOT require the `enabled`
+    // (auto toggle) flag: in the LSPosed modules changeAutoplay() can fail while the hooks are
+    // still coming up, leaving `enabled` false, and tying the rewrite to it disabled protection
+    // entirely. "Auto must be on" is enforced in the panel instead.
+    return atomic_load(&ready) && chart_config.mode==4 && chart_config.assist_guard>=1;
 }
 
 static void miss(void *score,float code,const void *method) {

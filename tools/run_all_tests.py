@@ -312,6 +312,19 @@ def main() -> int:
         else:
             print('  SKIP test script missing')
 
+        print('== panel toggles wired ==')
+        sc = REPO / 'tools' / 'check_panel_toggles.py'
+        if sc.is_file():
+            code, output = run([sys.executable, str(sc)], REPO)
+            print(f'  {"PASS" if code == 0 else "FAIL"} panel toggles')
+            for line in output.splitlines():
+                if line.startswith('FAIL'):
+                    print(f'       {line}')
+            total_pass += 1 if code == 0 else 0
+            total_fail += 0 if code == 0 else 1
+        else:
+            print('  SKIP checker missing')
+
         print('== panel scripts parse ==')
         script = REPO / 'tools' / 'check_panel_scripts.py'
         if script.is_file():
